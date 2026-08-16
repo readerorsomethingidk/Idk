@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Afterword — listen to novels</title>
+<meta name="theme-color" content="#131220" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Manrope:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink: #131220;
+    --surface: #1c1a2b;
+    --surface-2: #262340;
+    --hairline: #33304a;
+    --gold: #e3a33f;
+    --gold-dim: #7a5a2c;
+    --teal: #5fb0a0;
+    --paper: #f3ece0;
+    --muted: #948da3;
+    --radius: 14px;
+  }
+
+  *{ box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html,body{ height:100%; }
+  body{
+    margin:0;
+    background: var(--ink);
+    color: var(--paper);
+    font-family: 'Manrope', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+  ::selection{ background: var(--gold-dim); color: var(--paper); }
+
+  a{ color: inherit; }
+
+  /* ---------- Top bar ---------- */
+  .topbar{
+    position: sticky; top:0; z-index: 20;
+    display:flex; align-items:center; justify-content:space-between;
+    padding: 18px 20px 14px;
+    background: linear-gradient(var(--ink) 70%, transparent);
+  }
+  .wordmark{
+    font-family:'Fraunces', serif;
+    font-weight:600; font-size: 1.28rem; letter-spacing: 0.01em;
+  }
+  .wordmark em{ color: var(--gold); font-style: normal; }
+  .topbar .sub{
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 0.68rem; color: var(--muted); letter-spacing: 0.06em;
+    text-transform: uppercase; margin-top:2px;
+  }
+  .icon-btn{
+    width:38px; height:38px; border-radius: 50%;
+    background: var(--surface); border: 1px solid var(--hairline);
+    display:flex; align-items:center; justify-content:center;
+    color: var(--paper); cursor:pointer;
+  }
+
+  /* ---------- Views ---------- */
+  .view{ display:none; padding: 0 20px 140px; }
+  .view.active{ display:block; }
+
+  /* ---------- Library hero ---------- */
+  .hero{ padding: 6px 0 22px; }
+  .hero h1{
+    font-family:'Fraunces', serif; font-weight: 500;
+    font-size: clamp(1.6rem, 6vw, 2.1rem);
+    line-height: 1.15; margin: 0 0 8px;
+  }
+  .hero p{ color: var(--muted); font-size: 0.92rem; line-height:1.5; margin:0; max-width: 34ch; }
+
+  .section-label{
+    font-family:'IBM Plex Mono', monospace; font-size: 0.7rem;
+    letter-spacing: 0.08em; text-transform: uppercase; color: var(--teal);
+    margin: 26px 0 12px; display:flex; align-items:center; gap:8px;
+  }
+  .section-label::after{ content:''; flex:1; height:1px; background: var(--hairline); }
+
+  /* ---------- Book card (spine) ---------- */
+  .book-card{
+    position: relative;
+    display:flex; gap:14px;
+    background: var(--surface);
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius);
+    padding: 14px 16px 14px 20px;
+    margin-bottom: 12px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: border-color .15s ease, transform .1s ease;
+  }
+  .book-card:active{ transform: scale(0.985); }
+  .book-card:hover{ border-color: #46426b; }
+
+  /* the signature element: a bookmark-ribbon progress spine on the left edge */
+  .book-card::before{
+    content:'';
+    position:absolute; left:0; top:0; bottom:0; width:5px;
+    background: var(--hairline);
+  }
+  .book-card::after{
+    content:'';
+    position:absolute; left:0; top:0; width:5px;
+    height: var(--progress, 0%);
+    background: linear-gradient(var(--gold), var(--teal));
+    transition: height .3s ease;
+  }
+
+  .book-cover{
+    width: 46px; height: 64px; border-radius: 4px; flex-shrink:0;
+    background: var(--surface-2);
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Fraunces', serif; font-size:1.3rem; color: var(--gold);
+    border: 1px solid var(--hairline);
+  }
+  .book-meta{ min-width:0; flex:1; }
+  .book-title{
+    font-family:'Fraunces', serif; font-weight:500; font-size: 1.02rem;
+    margin: 0 0 3px; white-space: nowrap; overflow:hidden; text-overflow: ellipsis;
+  }
+  .book-sub{ font-size: 0.8rem; color: var(--muted); margin:0 0 8px; }
+  .book-progress-row{
+    display:flex; align-items:center; gap:8px;
+    font-family:'IBM Plex Mono', monospace; font-size: 0.7rem; color: var(--teal);
+  }
+  .badge{
+    font-family:'IBM Plex Mono', monospace; font-size: 0.62rem;
+    padding: 2px 7px; border-radius: 20px; letter-spacing:0.04em;
+    background: var(--surface-2); color: var(--muted); border:1px solid var(--hairline);
+  }
+  .badge.private{ color: var(--gold); border-color: var(--gold-dim); }
+
+  .empty-add-card{
+    border: 1px dashed var(--hairline); border-radius: var(--radius);
+    padding: 16px 18px; color: var(--muted); font-size: 0.85rem;
+    display:flex; align-items:center; gap:10px; cursor:pointer;
+  }
+  .empty-add-card:active{ background: var(--surface); }
+  .plus{
+    width:28px; height:28px; border-radius:50%; background: var(--surface-2);
+    display:flex; align-items:center; justify-content:center; flex-shrink:0;
+    color: var(--gold); font-size: 1.1rem;
+  }
+
+  /* ---------- Reader view ---------- */
+  .reader-head{ padding: 4px 0 4px; display:flex; align-items:flex-start; gap:12px; }
+  .back-btn{ font-family:'IBM Plex Mono', monospace; font-size: 0.78rem; color: var(--muted); background:none; border:none; cursor:pointer; padding: 6px 0; }
+  .reader-title{ font-family:'Fraunces', serif; font-size: 1.3rem; font-weight:500; margin: 10px 0 2px; }
+  .reader-chapter{ font-family:'IBM Plex Mono', monospace; font-size: 0.72rem; color: var(--teal); text-transform:uppercase; letter-spacing:.06em; }
+
+  .chapter-text{
+    margin-top: 22px; font-size: 1.06rem; line-height: 1.85; color: #ddd6e6;
+  }
+  .chapter-text p{ margin: 0 0 1.2em; }
+  .chapter-text .active-line{
+    color: var(--paper);
+    background: linear-gradient(90deg, rgba(227,163,63,0.16), transparent);
+    border-radius: 4px;
+  }
+
+  /* waveform-shaped scrubber — signature element #2: bars sized from sentence rhythm */
+  .waveform{
+    display:flex; align-items:flex-end; gap:2px; height: 34px;
+    margin: 4px 0 2px; cursor:pointer;
+  }
+  .waveform span{
+    flex:1; min-width:2px; background: var(--hairline); border-radius:2px;
+    transition: background .2s ease;
+  }
+  .waveform span.played{ background: var(--gold); }
+
+  /* ---------- Dock player (bottom, persistent) ---------- */
+  .dock{
+    position: fixed; left:0; right:0; bottom:0; z-index: 30;
+    padding: 10px 14px calc(14px + env(safe-area-inset-bottom));
+    background: rgba(28,26,43,0.92);
+    backdrop-filter: blur(14px);
+    border-top: 1px solid var(--hairline);
+    display: none;
+  }
+  .dock.active{ display:block; }
+  .dock-top{ display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+  .dock-cover{
+    width: 34px; height:34px; border-radius:6px; background: var(--surface-2);
+    display:flex; align-items:center; justify-content:center; color: var(--gold);
+    font-family:'Fraunces', serif; font-size:0.95rem; flex-shrink:0;
+    border: 1px solid var(--hairline);
+  }
+  .dock-info{ min-width:0; flex:1; }
+  .dock-title{ font-size: 0.85rem; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .dock-chapter{ font-family:'IBM Plex Mono', monospace; font-size: 0.66rem; color: var(--muted); }
+  .dock-controls{ display:flex; align-items:center; gap:18px; }
+  .dock-controls button{
+    background:none; border:none; color: var(--paper); cursor:pointer;
+    display:flex; align-items:center; justify-content:center; padding:4px;
+  }
+  .play-btn{
+    width:42px; height:42px; border-radius:50%; background: var(--gold) !important;
+    color: var(--ink) !important;
+  }
+  .dock-scrub{
+    display:flex; align-items:center; gap:8px; margin-top:8px;
+    font-family:'IBM Plex Mono', monospace; font-size: 0.62rem; color: var(--muted);
+  }
+  .dock-scrub input[type=range]{
+    flex:1; -webkit-appearance:none; height:3px; background: var(--hairline); border-radius:2px; outline:none;
+  }
+  .dock-scrub input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance:none; width:12px; height:12px; border-radius:50%; background: var(--gold);
+  }
+
+  /* ---------- Upload sheet (secondary/experimental) ---------- */
+  .sheet-backdrop{
+    position: fixed; inset:0; background: rgba(10,9,16,0.6); z-index: 40;
+    display:none; align-items:flex-end;
+  }
+  .sheet-backdrop.active{ display:flex; }
+  .sheet{
+    width:100%; background: var(--surface); border-radius: 18px 18px 0 0;
+    padding: 22px 20px calc(24px + env(safe-area-inset-bottom));
+    border-top: 1px solid var(--hairline);
+  }
+  .sheet h2{ font-family:'Fraunces', serif; font-weight:500; font-size:1.15rem; margin: 0 0 6px; }
+  .sheet p{ color: var(--muted); font-size: 0.85rem; line-height:1.55; margin: 0 0 16px; }
+  .sheet .tag{
+    display:inline-block; font-family:'IBM Plex Mono', monospace; font-size:0.62rem;
+    color: var(--gold); border:1px solid var(--gold-dim); border-radius: 20px;
+    padding: 2px 8px; margin-bottom:10px; letter-spacing:.05em;
+  }
+  .file-drop{
+    border: 1px dashed var(--hairline); border-radius: 12px; padding: 22px;
+    text-align:center; font-size: 0.85rem; color: var(--muted); margin-bottom: 14px;
+  }
+  .sheet-close{
+    width:100%; padding: 13px; border-radius: 10px; border:1px solid var(--hairline);
+    background: var(--surface-2); color: var(--paper); font-family:'Manrope',sans-serif;
+    font-weight:600; font-size:0.9rem;
+  }
+
+  .status-line{
+    font-family:'IBM Plex Mono', monospace; font-size: 0.68rem; color: var(--muted);
+    margin-top: 10px;
+  }
+
+  svg{ display:block; }
+</style>
+</head>
+<body>
+
+  <div class="topbar">
+    <div>
+      <div class="wordmark">after<em>word</em></div>
+      <div class="sub">novels, read aloud</div>
+    </div>
+    <button class="icon-btn" id="uploadTrigger" title="Add your own EPUB (experimental)" aria-label="Add your own book">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+    </button>
+  </div>
+
+  <!-- ===================== LIBRARY VIEW ===================== -->
+  <main class="view active" id="view-library">
+    <div class="hero">
+      <h1>Pick up where the page left off.</h1>
+      <p>Public-domain novels narrated with natural AI voices — free, and built to actually sound like a book, not a satnav.</p>
+    </div>
+
+    <div class="section-label">Library</div>
+    <div id="bookList"></div>
+
+    <div class="empty-add-card" id="emptyAddCard">
+      <div class="plus">＋</div>
+      <div>Have your own EPUB? Add it — generation runs on your device, nothing is uploaded anywhere.</div>
+    </div>
+  </main>
+
+  <!-- ===================== READER VIEW ===================== -->
+  <main class="view" id="view-reader">
+    <div class="reader-head">
+      <button class="back-btn" id="backBtn">← Library</button>
+    </div>
+    <div class="reader-title" id="readerTitle">—</div>
+    <div class="reader-chapter" id="readerChapter">—</div>
+
+    <div class="waveform" id="waveform"></div>
+
+    <div class="chapter-text" id="chapterText"></div>
+  </main>
+
+  <!-- ===================== DOCK PLAYER ===================== -->
+  <div class="dock" id="dock">
+    <div class="dock-top">
+      <div class="dock-cover" id="dockCover">—</div>
+      <div class="dock-info">
+        <div class="dock-title" id="dockTitle">—</div>
+        <div class="dock-chapter" id="dockChapter">—</div>
+      </div>
+      <div class="dock-controls">
+        <button id="skipBack" aria-label="Back 15 seconds">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 6V2L7 7l5 5V8a6 6 0 1 1-6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <button id="playPause" class="play-btn" aria-label="Play">
+          <svg id="playIcon" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+          <svg id="pauseIcon" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" style="display:none"><path d="M6 5h4v14H6zM14 5h4v14h-4z"/></svg>
+        </button>
+        <button id="skipFwd" aria-label="Forward 15 seconds">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 6V2l5 5-5 5V8a6 6 0 1 0 6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+    </div>
+    <div class="dock-scrub">
+      <span id="curTime">0:00</span>
+      <input type="range" id="scrub" min="0" max="100" value="0" />
+      <span id="durTime">0:00</span>
+    </div>
+  </div>
+
+  <!-- ===================== UPLOAD SHEET (experimental, secondary) ===================== -->
+  <div class="sheet-backdrop" id="sheetBackdrop">
+    <div class="sheet">
+      <span class="tag">experimental · on-device</span>
+      <h2>Add your own book</h2>
+      <p>Runs entirely in your browser using a local AI voice model — nothing is uploaded. On phones this can be slow (real-time or slower per sentence), so it's best suited to short chapters or testing rather than full novels for now.</p>
+      <div class="file-drop" id="fileDrop">Tap to choose an .epub or .txt file</div>
+      <input type="file" id="fileInput" accept=".epub,.txt" style="display:none" />
+      <div class="status-line" id="uploadStatus"></div>
+      <button class="sheet-close" id="sheetClose" style="margin-top:12px;">Close</button>
+    </div>
+  </div>
+
+<script>
+/* =========================================================================
+   AFTERWORD — single-file novel TTS reader shell
+   -------------------------------------------------------------------------
+   Data model: books are described by a manifest (see BOOKS below). In
+   production, replace the inline sample with a fetch('manifest.json') that
+   points at chapter audio hosted on GitHub Releases (public repo for the
+   public-domain library; private repo for a personal collection).
+   Each chapter's audioUrl should be a pre-generated Kokoro MP3. If absent,
+   the shell falls back to the browser's built-in SpeechSynthesis so the UI
+   is testable before any audio has been generated.
+   ========================================================================= */
+
+const STORAGE_KEY = 'afterword:progress';
+
+// ---- Sample / seed data (public domain) --------------------------------
+// Swap this block for `const BOOKS = await fetch('manifest.json').then(r=>r.json())`
+const BOOKS = [
+  {
+    id: 'moon-and-sixpence',
+    title: 'The Moon and Sixpence',
+    author: 'W. Somerset Maugham',
+    source: 'public-domain',
+    chapters: [
+      {
+        id: 'ch1',
+        label: 'Chapter I',
+        audioUrl: null, // no pre-generated file yet — falls back to SpeechSynthesis
+        text: [
+          "I confess that when first I made acquaintance with Charles Strickland I never for a moment discerned that there was in him anything out of the ordinary.",
+          "Yet now few will be found to deny his greatness. I do not speak of that greatness which is achieved by the fortunate politician or the successful soldier; that is a quality which belongs to the place he occupies rather than to the man.",
+          "It is more difficult to judge the greatness of a painter. His fame must rest on the emotion that his pictures excite, and that emotion is dulled by familiarity."
+        ]
+      }
+    ]
+  }
+];
+
+// ---- State ---------------------------------------------------------------
+let currentBook = null;
+let currentChapterIdx = 0;
+let audioEl = null;
+let speechUtterance = null;
+let isPlaying = false;
+let sentenceEls = [];
+
+// ---- Progress persistence -------------------------------------------------
+function loadProgress(){
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; }
+  catch(e){ return {}; }
+}
+function saveProgress(bookId, data){
+  const all = loadProgress();
+  all[bookId] = { ...(all[bookId]||{}), ...data, updatedAt: Date.now() };
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(all));
+}
+function progressFor(bookId){
+  return loadProgress()[bookId] || null;
+}
+
+// ---- Library rendering -----------------------------------------------------
+function renderLibrary(){
+  const list = document.getElementById('bookList');
+  list.innerHTML = '';
+  BOOKS.forEach(book => {
+    const p = progressFor(book.id);
+    const pct = p && p.chapterIdx != null
+      ? Math.round(((p.chapterIdx + (p.fraction||0)) / book.chapters.length) * 100)
+      : 0;
+
+    const card = document.createElement('div');
+    card.className = 'book-card';
+    card.style.setProperty('--progress', pct + '%');
+    card.innerHTML = `
+      <div class="book-cover">${book.title.charAt(0)}</div>
+      <div class="book-meta">
+        <div class="book-title">${book.title}</div>
+        <div class="book-sub">${book.author}</div>
+        <div class="book-progress-row">
+          <span class="badge ${book.source === 'private' ? 'private' : ''}">${book.source === 'private' ? 'personal' : 'public domain'}</span>
+          <span>${pct > 0 ? pct + '% listened' : book.chapters.length + ' chapter' + (book.chapters.length>1?'s':'')}</span>
+        </div>
+      </div>
+    `;
+    card.addEventListener('click', () => openBook(book, p ? p.chapterIdx : 0));
+    list.appendChild(card);
+  });
+}
+
+// ---- View switching ---------------------------------------------------------
+function showView(name){
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById('view-' + name).classList.add('active');
+}
+
+// ---- Reader / player -----------------------------------------------------
+function openBook(book, chapterIdx = 0){
+  currentBook = book;
+  currentChapterIdx = chapterIdx || 0;
+  showView('reader');
+  loadChapter();
+  document.getElementById('dock').classList.add('active');
+}
+
+function loadChapter(){
+  const chapter = currentBook.chapters[currentChapterIdx];
+  document.getElementById('readerTitle').textContent = currentBook.title;
+  document.getElementById('readerChapter').textContent = chapter.label;
+  document.getElementById('dockTitle').textContent = currentBook.title;
+  document.getElementById('dockChapter').textContent = chapter.label;
+  document.getElementById('dockCover').textContent = currentBook.title.charAt(0);
+
+  const textEl = document.getElementById('chapterText');
+  textEl.innerHTML = '';
+  sentenceEls = [];
+  chapter.text.forEach((sentence, i) => {
+    const p = document.createElement('p');
+    p.textContent = sentence;
+    p.dataset.index = i;
+    textEl.appendChild(p);
+    sentenceEls.push(p);
+  });
+
+  buildWaveform(chapter.text);
+  stopPlayback();
+
+  updateMediaSession(chapter);
+}
+
+// waveform bars sized from each sentence's length — text rhythm made visible
+function buildWaveform(sentences){
+  const wf = document.getElementById('waveform');
+  wf.innerHTML = '';
+  const maxLen = Math.max(...sentences.map(s => s.length));
+  sentences.forEach((s, i) => {
+    const bar = document.createElement('span');
+    const h = 20 + Math.round((s.length / maxLen) * 80);
+    bar.style.height = h + '%';
+    bar.dataset.index = i;
+    bar.addEventListener('click', () => jumpToSentence(i));
+    wf.appendChild(bar);
+  });
+}
+
+function markActiveSentence(i){
+  sentenceEls.forEach(el => el.classList.remove('active-line'));
+  if (sentenceEls[i]) {
+    sentenceEls[i].classList.add('active-line');
+    sentenceEls[i].scrollIntoView({ block: 'center', behavior: 'smooth' });
+  }
+  document.querySelectorAll('#waveform span').forEach((bar, idx) => {
+    bar.classList.toggle('played', idx <= i);
+  });
+}
+
+let sentenceCursor = 0;
+
+function jumpToSentence(i){
+  sentenceCursor = i;
+  markActiveSentence(i);
+  if (isPlaying) { stopPlayback(); playFromCursor(); }
+}
+
+function playFromCursor(){
+  const chapter = currentBook.chapters[currentChapterIdx];
+
+  if (chapter.audioUrl) {
+    // ---- Pre-generated Kokoro audio path (production) ----
+    if (!audioEl) audioEl = new Audio();
+    audioEl.src = chapter.audioUrl;
+    audioEl.play();
+    isPlaying = true;
+    setPlayIcon(true);
+    // Sentence-level highlighting in production should use a timestamps
+    // sidecar generated alongside the audio (Kokoro can emit word timings).
+  } else {
+    // ---- Fallback: browser SpeechSynthesis (demo / no audio generated yet) ----
+    if (!('speechSynthesis' in window)) {
+      document.getElementById('readerChapter').textContent += ' — speech unavailable in this browser';
+      return;
+    }
+    speakSentence(sentenceCursor);
+  }
+}
+
+function speakSentence(i){
+  const chapter = currentBook.chapters[currentChapterIdx];
+  if (i >= chapter.text.length) { stopPlayback(); return; }
+  window.speechSynthesis.cancel();
+  const utter = new SpeechSynthesisUtterance(chapter.text[i]);
+  utter.rate = 1;
+  utter.onend = () => {
+    if (!isPlaying) return;
+    sentenceCursor = i + 1;
+    markActiveSentence(sentenceCursor);
+    saveProgress(currentBook.id, { chapterIdx: currentChapterIdx, fraction: sentenceCursor / chapter.text.length });
+    speakSentence(sentenceCursor);
+  };
+  speechUtterance = utter;
+  markActiveSentence(i);
+  window.speechSynthesis.speak(utter);
+}
+
+function stopPlayback(){
+  isPlaying = false;
+  setPlayIcon(false);
+  if (audioEl) audioEl.pause();
+  if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+}
+
+function togglePlay(){
+  if (isPlaying) {
+    stopPlayback();
+  } else {
+    isPlaying = true;
+    setPlayIcon(true);
+    playFromCursor();
+  }
+}
+
+function setPlayIcon(playing){
+  document.getElementById('playIcon').style.display = playing ? 'none' : 'block';
+  document.getElementById('pauseIcon').style.display = playing ? 'block' : 'none';
+}
+
+// ---- Media Session (lock screen / car controls) ---------------------------
+function updateMediaSession(chapter){
+  if (!('mediaSession' in navigator)) return;
+  navigator.mediaSession.metadata = new MediaMetadata({
+    title: chapter.label,
+    artist: currentBook.author,
+    album: currentBook.title
+  });
+  navigator.mediaSession.setActionHandler('play', togglePlay);
+  navigator.mediaSession.setActionHandler('pause', togglePlay);
+  navigator.mediaSession.setActionHandler('previoustrack', () => changeChapter(-1));
+  navigator.mediaSession.setActionHandler('nexttrack', () => changeChapter(1));
+  navigator.mediaSession.setActionHandler('seekbackward', () => jumpToSentence(Math.max(0, sentenceCursor - 1)));
+  navigator.mediaSession.setActionHandler('seekforward', () => jumpToSentence(sentenceCursor + 1));
+}
+
+function changeChapter(delta){
+  const next = currentChapterIdx + delta;
+  if (next < 0 || next >= currentBook.chapters.length) return;
+  currentChapterIdx = next;
+  sentenceCursor = 0;
+  loadChapter();
+}
+
+// ---- Wire up controls -------------------------------------------------------
+document.getElementById('playPause').addEventListener('click', togglePlay);
+document.getElementById('skipBack').addEventListener('click', () => jumpToSentence(Math.max(0, sentenceCursor - 1)));
+document.getElementById('skipFwd').addEventListener('click', () => jumpToSentence(sentenceCursor + 1));
+document.getElementById('backBtn').addEventListener('click', () => { stopPlayback(); showView('library'); renderLibrary(); });
+
+// ---- Upload sheet (secondary/experimental feature) -------------------------
+const sheetBackdrop = document.getElementById('sheetBackdrop');
+document.getElementById('uploadTrigger').addEventListener('click', () => sheetBackdrop.classList.add('active'));
+document.getElementById('emptyAddCard').addEventListener('click', () => sheetBackdrop.classList.add('active'));
+document.getElementById('sheetClose').addEventListener('click', () => sheetBackdrop.classList.remove('active'));
+sheetBackdrop.addEventListener('click', (e) => { if (e.target === sheetBackdrop) sheetBackdrop.classList.remove('active'); });
+
+document.getElementById('fileDrop').addEventListener('click', () => document.getElementById('fileInput').click());
+document.getElementById('fileInput').addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  document.getElementById('uploadStatus').textContent =
+    `Selected: ${file.name} — on-device Kokoro generation would start here. Wire this to kokoro-js once the model is bundled.`;
+  // Integration point: load kokoro-js (ONNX, quantized q8/q4), parse the
+  // EPUB/TXT into chapters client-side, then feed sentences into the same
+  // playFromCursor()/audioEl pipeline used above.
+});
+
+// ---- Init -------------------------------------------------------------------
+renderLibrary();
+</script>
+</body>
+</html>
