@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CLEARFILE — Metadata Removal</title>
+<style>
+  :root{
+    --bg: #121415;
+    --bg-raised: #1a1d1e;
+    --paper: #efebe2;
+    --paper-dim: #e3ddcf;
+    --ink: #1b1d1e;
+    --redact: #b23a2e;
+    --redact-dim: #7d2820;
+    --muted: #8a8e8f;
+    --line: #33373a;
+    --ok: #5c8a6e;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+    --serif: Georgia, "Times New Roman", serif;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--paper);
+    font-family:var(--sans);
+    min-height:100vh;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:760px; margin:0 auto; padding:56px 24px 80px;}
+
+  /* header */
+  .eyebrow{
+    font-family:var(--mono);
+    font-size:11px;
+    letter-spacing:.14em;
+    color:var(--redact);
+    text-transform:uppercase;
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin-bottom:18px;
+  }
+  .eyebrow::before{
+    content:"";
+    width:7px; height:7px;
+    background:var(--redact);
+    border-radius:50%;
+    display:inline-block;
+  }
+  h1{
+    font-family:var(--serif);
+    font-weight:400;
+    font-size:clamp(32px, 5.5vw, 48px);
+    line-height:1.05;
+    letter-spacing:-.01em;
+    margin-bottom:16px;
+  }
+  h1 em{font-style:italic; color:var(--muted);}
+  .sub{
+    font-size:15px;
+    line-height:1.6;
+    color:#b8bcbc;
+    max-width:52ch;
+    margin-bottom:8px;
+  }
+  .sub strong{color:var(--paper); font-weight:600;}
+  .assurance{
+    font-family:var(--mono);
+    font-size:11.5px;
+    color:var(--ok);
+    margin-top:14px;
+    display:flex;
+    align-items:center;
+    gap:8px;
+    letter-spacing:.02em;
+  }
+  .assurance::before{content:"●"; font-size:8px;}
+
+  /* dropzone — evidence envelope */
+  .envelope{
+    margin-top:40px;
+    position:relative;
+    border:1.5px dashed var(--line);
+    background:var(--bg-raised);
+    padding:48px 24px;
+    text-align:center;
+    cursor:pointer;
+    transition:border-color .2s ease, background .2s ease;
+  }
+  .envelope::before{
+    content:"";
+    position:absolute;
+    top:0; left:50%;
+    width:56px; height:2px;
+    background:var(--line);
+    transform:translateX(-50%);
+  }
+  .envelope.drag{border-color:var(--redact); background:#1f1512;}
+  .envelope .tab{
+    font-family:var(--mono);
+    font-size:10px;
+    letter-spacing:.1em;
+    color:var(--muted);
+    text-transform:uppercase;
+    position:absolute;
+    top:14px; left:20px;
+  }
+  .envelope h3{
+    font-family:var(--serif);
+    font-size:20px;
+    font-weight:400;
+    margin-bottom:8px;
+  }
+  .envelope p{font-size:13px; color:var(--muted);}
+  .envelope input{display:none;}
+
+  /* result area */
+  .result{display:none; margin-top:36px;}
+  .result.show{display:block; animation:fade .3s ease;}
+  @keyframes fade{from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);}}
+
+  .filecard{
+    display:flex;
+    gap:16px;
+    align-items:center;
+    background:var(--bg-raised);
+    border:1px solid var(--line);
+    padding:16px;
+    margin-bottom:20px;
+  }
+  .filecard img{
+    width:64px; height:64px;
+    object-fit:cover;
+    border:1px solid var(--line);
+    background:#000;
+  }
+  .filecard .meta{flex:1; min-width:0;}
+  .filecard .fname{
+    font-family:var(--mono);
+    font-size:13px;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+  }
+  .filecard .fsize{font-size:12px; color:var(--muted); margin-top:4px;}
+
+  .panel-label{
+    font-family:var(--mono);
+    font-size:11px;
+    letter-spacing:.12em;
+    text-transform:uppercase;
+    color:var(--muted);
+    margin-bottom:10px;
+    display:flex;
+    justify-content:space-between;
+  }
+
+  .fields{
+    background:var(--paper);
+    color:var(--ink);
+    padding:4px 0;
+    margin-bottom:20px;
+  }
+  .field-row{
+    display:flex;
+    justify-content:space-between;
+    gap:16px;
+    padding:11px 18px;
+    border-bottom:1px solid var(--paper-dim);
+    font-family:var(--mono);
+    font-size:12.5px;
+    position:relative;
+    overflow:hidden;
+  }
+  .field-row:last-child{border-bottom:none;}
+  .field-row .k{color:#6b6f5f; flex-shrink:0;}
+  .field-row .v{
+    text-align:right;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+    position:relative;
+  }
+  .field-row .bar{
+    position:absolute;
+    top:0; right:0; bottom:0;
+    width:0%;
+    background:var(--redact);
+    z-index:1;
+  }
+  .field-row.redacted .bar{width:100%; transition:width .5s cubic-bezier(.65,0,.35,1);}
+  .field-row.redacted .v{color:transparent; transition:color 0s .3s;}
+
+  .empty-note{
+    padding:16px 18px;
+    font-size:13px;
+    color:#6b6f5f;
+    font-style:italic;
+  }
+
+  .actions{display:flex; gap:12px; align-items:center; flex-wrap:wrap;}
+  button{
+    font-family:var(--mono);
+    font-size:12.5px;
+    letter-spacing:.05em;
+    text-transform:uppercase;
+    padding:14px 22px;
+    border:1px solid var(--redact);
+    background:var(--redact);
+    color:var(--paper);
+    cursor:pointer;
+    transition:background .15s ease, opacity .15s ease;
+  }
+  button:hover{background:var(--redact-dim);}
+  button:disabled{opacity:.4; cursor:not-allowed;}
+  button.secondary{
+    background:transparent;
+    border-color:var(--line);
+    color:var(--muted);
+  }
+  button.secondary:hover{border-color:var(--muted); color:var(--paper);}
+
+  .stamp{
+    display:none;
+    align-items:center;
+    gap:8px;
+    font-family:var(--mono);
+    font-size:12px;
+    color:var(--ok);
+    border:1.5px solid var(--ok);
+    padding:8px 14px;
+    letter-spacing:.1em;
+    text-transform:uppercase;
+    transform:rotate(-2deg);
+  }
+  .stamp.show{display:inline-flex; animation:stampIn .35s cubic-bezier(.34,1.56,.64,1);}
+  @keyframes stampIn{from{opacity:0; transform:rotate(-2deg) scale(1.4);} to{opacity:1; transform:rotate(-2deg) scale(1);}}
+
+  .compare{
+    display:flex;
+    gap:24px;
+    margin-top:18px;
+    font-family:var(--mono);
+    font-size:11.5px;
+    color:var(--muted);
+  }
+  .compare b{color:var(--paper); font-weight:400;}
+
+  footer{
+    margin-top:64px;
+    padding-top:24px;
+    border-top:1px solid var(--line);
+    font-size:12px;
+    color:var(--muted);
+    line-height:1.7;
+  }
+  footer b{color:#b8bcbc;}
+
+  canvas{display:none;}
+
+  @media (prefers-reduced-motion: reduce){
+    *{animation:none !important; transition:none !important;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="eyebrow">Local processing only</div>
+  <h1>Strip the paper trail<br><em>before it leaves the room.</em></h1>
+  <p class="sub">
+    Photos carry a quiet record of where they came from — camera model, timestamp,
+    sometimes exact GPS coordinates. <strong>Clearfile</strong> finds that record and
+    removes it, entirely inside this browser tab.
+  </p>
+  <div class="assurance">Your image is never uploaded — there is no server in this tool</div>
+
+  <label class="envelope" id="dropzone">
+    <span class="tab">Exhibit A</span>
+    <h3>Drop an image, or click to select</h3>
+    <p>JPEG or PNG</p>
+    <input type="file" id="fileInput" accept="image/jpeg,image/png">
+  </label>
+
+  <div class="result" id="result">
+
+    <div class="filecard">
+      <img id="thumb" alt="">
+      <div class="meta">
+        <div class="fname" id="fname">—</div>
+        <div class="fsize" id="fsize">—</div>
+      </div>
+      <div class="stamp" id="stamp">Cleared</div>
+    </div>
+
+    <div class="panel-label"><span>Fields found in file</span><span id="fieldCount">0</span></div>
+    <div class="fields" id="fields"></div>
+
+    <div class="actions">
+      <button id="scrubBtn">Remove metadata &amp; download</button>
+      <button class="secondary" id="resetBtn">Start over</button>
+    </div>
+
+    <div class="compare" id="compare" style="display:none;">
+      <span>Original: <b id="sizeBefore">—</b></span>
+      <span>Cleaned: <b id="sizeAfter">—</b></span>
+    </div>
+
+  </div>
+
+  <footer>
+    <b>How this works —</b> the image is redrawn onto an in-memory canvas and
+    re-encoded from scratch. Camera/EXIF tags, GPS data, embedded color profiles,
+    and text chunks don't survive that re-encode, so the file that downloads is a
+    clean copy with none of the original's hidden fields. Nothing is transmitted
+    anywhere at any point — check your browser's network tab if you'd like to see
+    for yourself.
+  </footer>
+
+</div>
+
+<canvas id="canvas"></canvas>
+
+<script>
+(function(){
+  const dropzone = document.getElementById('dropzone');
+  const fileInput = document.getElementById('fileInput');
+  const result = document.getElementById('result');
+  const thumb = document.getElementById('thumb');
+  const fname = document.getElementById('fname');
+  const fsize = document.getElementById('fsize');
+  const fieldsEl = document.getElementById('fields');
+  const fieldCount = document.getElementById('fieldCount');
+  const scrubBtn = document.getElementById('scrubBtn');
+  const resetBtn = document.getElementById('resetBtn');
+  const stamp = document.getElementById('stamp');
+  const compare = document.getElementById('compare');
+  const sizeBefore = document.getElementById('sizeBefore');
+  const sizeAfter = document.getElementById('sizeAfter');
+  const canvas = document.getElementById('canvas');
+
+  let currentFile = null;
+  let currentBuffer = null;
+  let objectUrl = null;
+
+  // ---------- drag & drop ----------
+  ['dragenter','dragover'].forEach(ev=>{
+    dropzone.addEventListener(ev, e=>{ e.preventDefault(); dropzone.classList.add('drag'); });
+  });
+  ['dragleave','drop'].forEach(ev=>{
+    dropzone.addEventListener(ev, e=>{ e.preventDefault(); dropzone.classList.remove('drag'); });
+  });
+  dropzone.addEventListener('drop', e=>{
+    const f = e.dataTransfer.files[0];
+    if(f) handleFile(f);
+  });
+  fileInput.addEventListener('change', e=>{
+    const f = e.target.files[0];
+    if(f) handleFile(f);
+  });
+  resetBtn.addEventListener('click', ()=>{
+    result.classList.remove('show');
+    fileInput.value = '';
+    if(objectUrl) URL.revokeObjectURL(objectUrl);
+  });
+
+  function formatBytes(n){
+    if(n < 1024) return n + ' B';
+    if(n < 1024*1024) return (n/1024).toFixed(1) + ' KB';
+    return (n/(1024*1024)).toFixed(2) + ' MB';
+  }
+
+  function handleFile(file){
+    if(!/^image\/(jpeg|png)$/.test(file.type)){
+      alert('Please choose a JPEG or PNG image.');
+      return;
+    }
+    currentFile = file;
+    stamp.classList.remove('show');
+    compare.style.display = 'none';
+
+    if(objectUrl) URL.revokeObjectURL(objectUrl);
+    objectUrl = URL.createObjectURL(file);
+    thumb.src = objectUrl;
+    fname.textContent = file.name;
+    fsize.textContent = formatBytes(file.size);
+
+    const reader = new FileReader();
+    reader.onload = function(e){
+      currentBuffer = e.target.result;
+      const dv = new DataView(currentBuffer);
+      let fields = [];
+      if(file.type === 'image/jpeg'){
+        fields = parseJPEG(dv);
+      } else if(file.type === 'image/png'){
+        fields = parsePNG(dv);
+      }
+      renderFields(fields);
+      result.classList.add('show');
+    };
+    reader.readAsArrayBuffer(file);
+  }
+
+  function renderFields(fields){
+    fieldsEl.innerHTML = '';
+    fieldCount.textContent = fields.length;
+    if(fields.length === 0){
+      fieldsEl.innerHTML = '<div class="empty-note">No readable metadata tags detected — the file may still carry a color profile or thumbnail that a full re-encode will also clear.</div>';
+      return;
+    }
+    fields.forEach(f=>{
+      const row = document.createElement('div');
+      row.className = 'field-row';
+      row.innerHTML = `<span class="k">${escapeHtml(f.k)}</span><span class="v">${escapeHtml(f.v)}<span class="bar"></span></span>`;
+      fieldsEl.appendChild(row);
+    });
+  }
+
+  function escapeHtml(s){
+    return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  // ---------- JPEG / EXIF parsing ----------
+  const TAG_NAMES = {
+    0x010F: 'Camera make',
+    0x0110: 'Camera model',
+    0x0112: 'Orientation',
+    0x0131: 'Software',
+    0x0132: 'Date/time',
+    0x8769: 'EXIF sub-IFD',
+    0x8825: 'GPS coordinates',
+    0x829A: 'Exposure time',
+    0x829D: 'F-number',
+    0x8827: 'ISO speed',
+    0x920A: 'Focal length',
+    0xA002: 'Image width (EXIF)',
+    0xA003: 'Image height (EXIF)',
+    0x9286: 'User comment',
+    0x013B: 'Artist',
+    0x8298: 'Copyright',
+    0xA430: 'Camera owner',
+    0xA433: 'Lens make',
+    0xA434: 'Lens model'
+  };
+
+  function parseJPEG(dv){
+    const fields = [];
+    if(dv.getUint16(0) !== 0xFFD8) return fields;
+    let offset = 2;
+    while(offset < dv.byteLength - 4){
+      if(dv.getUint8(offset) !== 0xFF) break;
+      const marker = dv.getUint8(offset+1);
+      if(marker === 0xD8 || marker === 0xD9){ offset += 2; continue; }
+      if(marker === 0x01 || (marker >= 0xD0 && marker <= 0xD7)){ offset += 2; continue; }
+      const segLen = dv.getUint16(offset+2);
+      if(marker === 0xE1){ // APP1 - EXIF
+        const start = offset + 4;
+        const tag = readAscii(dv, start, 4);
+        if(tag === 'Exif'){
+          try{
+            const tiffStart = start + 6;
+            parseTIFF(dv, tiffStart, fields);
+          }catch(e){ /* malformed exif, skip */ }
+        }
+      }
+      if(marker === 0xE2){ fields.push({k:'ICC / color profile', v:'embedded'}); }
+      if(marker === 0xED){ fields.push({k:'Photoshop IRB data', v:'embedded'}); }
+      if(marker === 0xDA) break; // start of scan, no more headers
+      offset += 2 + segLen;
+    }
+    return dedupe(fields);
+  }
+
+  function readAscii(dv, offset, len){
+    let s = '';
+    for(let i=0;i<len;i++) s += String.fromCharCode(dv.getUint8(offset+i));
+    return s;
+  }
+
+  function parseTIFF(dv, tiffStart, fields){
+    const byteOrder = readAscii(dv, tiffStart, 2);
+    const little = byteOrder === 'II';
+    const g16 = (o)=> dv.getUint16(o, little);
+    const g32 = (o)=> dv.getUint32(o, little);
+    const firstIFD = g32(tiffStart + 4);
+    readIFD(dv, tiffStart, tiffStart + firstIFD, little, fields, g16, g32);
+  }
+
+  function readIFD(dv, tiffStart, ifdOffset, little, fields, g16, g32){
+    if(ifdOffset <= 0 || ifdOffset + 2 > dv.byteLength) return;
+    const count = g16(ifdOffset);
+    for(let i=0;i<count;i++){
+      const entryOffset = ifdOffset + 2 + (i*12);
+      if(entryOffset + 12 > dv.byteLength) break;
+      const tag = g16(entryOffset);
+      const type = g16(entryOffset+2);
+      const numValues = g32(entryOffset+4);
+      const valueOffsetField = entryOffset + 8;
+
+      if(tag === 0x8769 || tag === 0x8825){
+        // pointer to sub-IFD (EXIF or GPS) — descend into it
+        const subOffset = g32(valueOffsetField);
+        fields.push({k: TAG_NAMES[tag] || ('Tag ' + tag), v: 'present'});
+        readIFD(dv, tiffStart, tiffStart + subOffset, little, fields, g16, g32);
+        continue;
+      }
+
+      const name = TAG_NAMES[tag];
+      if(!name) continue; // skip tags we don't have friendly labels for
+
+      let val = '';
+      try{
+        if(type === 2){ // ASCII
+          const len = numValues;
+          const dataOffset = len > 4 ? tiffStart + g32(valueOffsetField) : valueOffsetField;
+          val = readAscii(dv, dataOffset, len).replace(/\0+$/,'').trim();
+        } else if(type === 3){ // SHORT
+          val = String(g16(valueOffsetField));
+        } else if(type === 4){ // LONG
+          val = String(g32(valueOffsetField));
+        } else if(type === 5){ // RATIONAL
+          const dataOffset = tiffStart + g32(valueOffsetField);
+          const num = g32(dataOffset), den = g32(dataOffset+4);
+          val = den ? (num/den).toFixed(3) : String(num);
+        } else {
+          val = 'present';
+        }
+      }catch(e){ val = 'present'; }
+
+      if(val !== '') fields.push({k: name, v: val});
+    }
+  }
+
+  // ---------- PNG parsing ----------
+  function parsePNG(dv){
+    const fields = [];
+    const sig = [137,80,78,71,13,10,26,10];
+    for(let i=0;i<8;i++){ if(dv.getUint8(i) !== sig[i]) return fields; }
+    let offset = 8;
+    while(offset < dv.byteLength - 8){
+      const len = dv.getUint32(offset);
+      const type = readAscii(dv, offset+4, 4);
+      const dataStart = offset + 8;
+
+      if(type === 'tEXt' || type === 'iTXt' || type === 'zTXt'){
+        // keyword is null-terminated
+        let end = dataStart;
+        while(end < dataStart+len && dv.getUint8(end) !== 0) end++;
+        const keyword = readAscii(dv, dataStart, end - dataStart);
+        let val = 'text field';
+        if(type === 'tEXt'){
+          val = readAscii(dv, end+1, (dataStart+len) - (end+1)).slice(0,60);
+        } else if(type === 'zTXt'){
+          val = 'compressed text field';
+        } else {
+          val = 'international text field';
+        }
+        fields.push({k: keyword || type, v: val});
+      } else if(type === 'tIME'){
+        const y = dv.getUint16(dataStart);
+        const mo = dv.getUint8(dataStart+2), d = dv.getUint8(dataStart+3);
+        fields.push({k:'Last modified', v:`${y}-${String(mo).padStart(2,'0')}-${String(d).padStart(2,'0')}`});
+      } else if(type === 'eXIf'){
+        fields.push({k:'Embedded EXIF block', v:'present'});
+        try{ parseTIFF(dv, dataStart, fields); }catch(e){}
+      } else if(type === 'pHYs'){
+        fields.push({k:'Physical pixel dimensions', v:'embedded'});
+      } else if(type === 'iCCP'){
+        fields.push({k:'ICC / color profile', v:'embedded'});
+      } else if(type === 'IEND'){
+        break;
+      }
+      offset = dataStart + len + 4; // skip CRC
+    }
+    return dedupe(fields);
+  }
+
+  function dedupe(fields){
+    const seen = new Set();
+    return fields.filter(f=>{
+      const key = f.k+'::'+f.v;
+      if(seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }
+
+  // ---------- scrub & download ----------
+  scrubBtn.addEventListener('click', ()=>{
+    if(!currentFile) return;
+    scrubBtn.disabled = true;
+
+    const rows = fieldsEl.querySelectorAll('.field-row');
+    rows.forEach((row, i)=>{
+      setTimeout(()=> row.classList.add('redacted'), i * 90);
+    });
+
+    const totalDelay = Math.max(rows.length * 90, 100) + 400;
+    setTimeout(()=> doScrub(), totalDelay);
+  });
+
+  function doScrub(){
+    const img = new Image();
+    img.onload = function(){
+      canvas.width = img.naturalWidth;
+      canvas.height = img.naturalHeight;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0);
+
+      const mime = currentFile.type === 'image/png' ? 'image/png' : 'image/jpeg';
+      const quality = mime === 'image/jpeg' ? 0.95 : undefined;
+
+      canvas.toBlob(function(blob){
+        const dlUrl = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        const base = currentFile.name.replace(/\.[^.]+$/, '');
+        const ext = mime === 'image/png' ? '.png' : '.jpg';
+        a.href = dlUrl;
+        a.download = base + '-cleared' + ext;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+
+        sizeBefore.textContent = formatBytes(currentFile.size);
+        sizeAfter.textContent = formatBytes(blob.size);
+        compare.style.display = 'flex';
+        stamp.classList.add('show');
+        scrubBtn.disabled = false;
+
+        setTimeout(()=> URL.revokeObjectURL(dlUrl), 4000);
+      }, mime, quality);
+    };
+    img.src = objectUrl;
+  }
+})();
+</script>
+</body>
+</html>
