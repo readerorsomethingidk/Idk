@@ -9,7 +9,33 @@
 <meta property="og:title" content="Clearfile — Free Photo Metadata Remover">
 <meta property="og:description" content="See what a photo reveals, strip its hidden metadata, or convert its format — all locally in your browser. No signup, no uploads, nothing to install.">
 <meta property="og:type" content="website">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Clearfile — Free Photo Metadata Remover">
+<meta name="twitter:description" content="See what a photo reveals, strip its hidden metadata, or convert its format — all locally in your browser.">
+<meta name="robots" content="index, follow">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23121415'/%3E%3Crect x='4' y='13' width='24' height='6' fill='%23b23a2e'/%3E%3C/svg%3E">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  "name": "Clearfile",
+  "description": "Remove EXIF and GPS metadata from photos, inspect what a photo reveals, or convert image formats — entirely client-side in the browser, with no upload, signup, or cost.",
+  "applicationCategory": "SecurityApplication",
+  "operatingSystem": "Any (runs in a web browser)",
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "USD"
+  },
+  "featureList": [
+    "Remove EXIF, GPS, and IPTC/XMP metadata from images",
+    "Inspect a photo's embedded metadata including GPS coordinates",
+    "Convert between JPEG, PNG, WebP, AVIF, and GIF",
+    "Manually redact parts of an image",
+    "Entirely client-side — no file ever leaves the browser"
+  ]
+}
+</script>
 <style>
   :root{
     --bg: #121415;
@@ -72,18 +98,6 @@
     margin-bottom:8px;
   }
   .sub strong{color:var(--paper); font-weight:600;}
-  .assurance{
-    font-family:var(--mono);
-    font-size:11.5px;
-    color:var(--ok);
-    margin-top:10px;
-    display:flex;
-    align-items:center;
-    gap:8px;
-    letter-spacing:.02em;
-  }
-  .assurance::before{content:"●"; font-size:8px;}
-  .assurance b{font-weight:600;}
 
   .envelope{
     display:block;
@@ -106,15 +120,6 @@
     transform:translateX(-50%);
   }
   .envelope.drag{border-color:var(--redact); background:#1f1512;}
-  .envelope .tab{
-    font-family:var(--mono);
-    font-size:10px;
-    letter-spacing:.1em;
-    color:var(--muted);
-    text-transform:uppercase;
-    position:absolute;
-    top:14px; left:20px;
-  }
   .envelope h3{
     font-family:var(--serif);
     font-size:20px;
@@ -176,10 +181,10 @@
     transition:border-color .15s ease, background .15s ease;
   }
   .back-link:hover{border-color:var(--redact); background:#1c1613;}
-  .back-link::before{content:"←"; font-size:13px;}
+
 
   .workspace{display:none;}
-  .workspace.show{display:block;}
+  .workspace.show{display:block; margin-top:36px;}
   .mode-picker.hide{display:none;}
 
   #convertPanel{display:none;}
@@ -234,16 +239,19 @@
     padding:14px 16px;
   }
   .qrow-top::before{
-    content:"▸";
-    font-family:var(--mono);
-    font-size:9px;
-    color:var(--muted);
+    content:"";
+    display:inline-block;
+    width:8px; height:8px;
+    background-color:var(--muted);
+    -webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M9 6l6 6-6 6' fill='none' stroke='black' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M9 6l6 6-6 6' fill='none' stroke='black' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    -webkit-mask-size:contain; mask-size:contain;
+    -webkit-mask-repeat:no-repeat; mask-repeat:no-repeat;
     flex-shrink:0;
     transition:transform .15s ease;
-    width:8px;
   }
   .qrow-disclosure[open] .qrow-top::before{ transform:rotate(90deg); }
-  .qrow-static .qrow-top::before{ content:""; width:0; }
+  .qrow-static .qrow-top::before{ background-color:transparent; width:0; }
   .qrow-details{
     border-top:1px solid var(--line);
     background:#0f1112;
@@ -273,15 +281,6 @@
     border-bottom:1px solid #1c1f20;
   }
   .field-note:last-child{border-bottom:none;}
-  .qrow .tag{
-    font-family:var(--mono);
-    font-size:9.5px;
-    color:var(--muted);
-    letter-spacing:.08em;
-    text-transform:uppercase;
-    width:56px;
-    flex-shrink:0;
-  }
   .qrow .thumb{
     width:46px; height:46px;
     flex-shrink:0;
@@ -401,6 +400,19 @@
   .mode-select input:checked + span{color:var(--paper);}
   .mode-select label:has(input:checked){background:var(--bg-raised); color:var(--paper);}
 
+  .checkbox-row{
+    display:flex;
+    align-items:flex-start;
+    gap:10px;
+    margin:12px 0 18px;
+    font-size:12px;
+    color:var(--muted);
+    line-height:1.5;
+    cursor:pointer;
+    max-width:52ch;
+  }
+  .checkbox-row input{accent-color:var(--redact); margin-top:2px; flex-shrink:0;}
+
   .quality-row{
     display:none;
     align-items:center;
@@ -456,7 +468,7 @@
   .summary b{color:var(--ok); font-weight:600;}
 
   footer{
-    margin-top:60px;
+    margin-top:24px;
     padding-top:24px;
     border-top:1px solid var(--line);
     font-size:12px;
@@ -469,6 +481,54 @@
     background:var(--bg-raised);
     padding:1px 5px;
     font-size:11px;
+  }
+
+  .faq-section{margin-top:56px;}
+  .faq-item{
+    background:var(--bg-raised);
+    border:1px solid var(--line);
+    border-top:none;
+  }
+  .faq-item:first-of-type{border-top:1px solid var(--line);}
+  .faq-item summary{
+    list-style:none;
+    cursor:pointer;
+    padding:16px 18px;
+    font-family:var(--serif);
+    font-size:15px;
+    line-height:1.35;
+    display:flex;
+    align-items:baseline;
+    gap:12px;
+    color:var(--paper);
+  }
+  .faq-item summary::-webkit-details-marker{display:none;}
+  .faq-item summary::before{
+    content:"";
+    display:inline-block;
+    width:9px; height:9px;
+    background-color:var(--redact);
+    -webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M9 6l6 6-6 6' fill='none' stroke='black' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M9 6l6 6-6 6' fill='none' stroke='black' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    -webkit-mask-size:contain; mask-size:contain;
+    -webkit-mask-repeat:no-repeat; mask-repeat:no-repeat;
+    transition:transform .15s ease;
+    flex-shrink:0;
+    margin-top:3px;
+  }
+  .faq-item[open] summary::before{transform:rotate(90deg);}
+  .faq-answer{
+    padding:0 18px 18px 34px;
+    font-size:13px;
+    line-height:1.65;
+    color:#b0b4b4;
+    max-width:64ch;
+  }
+  .faq-answer code{
+    font-family:var(--mono);
+    background:var(--bg);
+    padding:1px 5px;
+    font-size:12px;
   }
 
   .redact-modal{
@@ -562,43 +622,34 @@
   @media (prefers-reduced-motion: reduce){
     *{animation:none !important; transition:none !important;}
   }
-  @media (max-width: 520px){
-    .qrow .tag{display:none;}
-  }
 </style>
 </head>
 <body>
 <div class="wrap">
+<main>
 
   <div class="eyebrow">Local processing only</div>
   <h1>Strip the paper trail<br><em>before it leaves the room.</em></h1>
-  <p class="sub">
-    Photos carry a quiet record of where they came from — camera model, timestamp,
-    sometimes exact GPS coordinates. <strong>Clearfile</strong> finds that record,
-    shows you exactly what it says, and removes it — entirely inside this browser
-    tab. Reads JPEG, PNG, WebP, GIF, BMP, SVG, ICO, HEIC, and AVIF, and can convert
-    between JPEG, PNG, WebP, AVIF, and GIF — one file or a whole batch.
-  </p>
-  <div class="assurance">Your images are never uploaded — there is no server in this tool</div>
-  <div class="assurance">Network requests made this session: <b id="netCount" style="color:var(--ok);">0</b></div>
+  <p class="sub">Remove hidden metadata, see what's in a photo, or convert its format — nothing ever leaves your browser.</p>
   <div class="badge-strip">
     <span>No signup</span>
     <span>No email</span>
     <span>Free</span>
     <span>Unlimited</span>
-    <span>Open to everyone</span>
+    <span>Nothing uploaded</span>
+    <span>Network requests: <b id="netCount" style="color:var(--ok);">0</b></span>
   </div>
 
   <div class="mode-picker" id="modePicker">
-    <button type="button" class="mode-card" id="pickInspect">
-      <span class="mode-card-tag">01</span>
-      <h3>Inspect metadata</h3>
-      <p>Just look, don't remove yet. See exactly what a photo reveals — GPS location on a map, camera model, timestamps — before deciding what to do about it.</p>
-    </button>
     <button type="button" class="mode-card" id="pickMetadata">
-      <span class="mode-card-tag">02</span>
+      <span class="mode-card-tag">01</span>
       <h3>Remove metadata</h3>
       <p>Strip EXIF, GPS, and other identifying tags. Byte-for-byte lossless — your original format and pixel data stay untouched.</p>
+    </button>
+    <button type="button" class="mode-card" id="pickInspect">
+      <span class="mode-card-tag">02</span>
+      <h3>Inspect metadata</h3>
+      <p>Just look, don't remove yet. See exactly what a photo reveals — GPS location on a map, camera model, timestamps — before deciding what to do about it.</p>
     </button>
     <button type="button" class="mode-card" id="pickConvert">
       <span class="mode-card-tag">03</span>
@@ -608,10 +659,9 @@
   </div>
 
   <div class="workspace" id="workspace">
-    <button type="button" class="back-link" id="backLink">Back to home</button>
+    <button type="button" class="back-link" id="backLink"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg> Back to home</button>
 
     <label class="envelope" id="dropzone">
-      <span class="tab">Exhibits</span>
       <h3 id="dropzoneTitle">Drop images here, or click to select</h3>
       <p>JPEG, PNG, WebP, GIF, BMP, SVG, ICO, HEIC, AVIF · multiple files · paste with ⌘/Ctrl+V</p>
       <input type="file" id="fileInput" accept="image/jpeg,image/png,image/webp,image/gif,image/bmp,image/svg+xml,image/x-icon,image/heic,image/heif,image/avif,.heic,.heif,.avif,.svg,.ico" multiple>
@@ -636,7 +686,7 @@
           <label for="qualitySlider">Quality: <span id="qualityValue"><b>92</b></span>%</label>
           <input type="range" id="qualitySlider" min="40" max="100" value="92">
         </div>
-        <p class="convert-note">"Keep original" is byte-for-byte lossless. Converting decodes and re-encodes the image instead — it strips metadata too, but the pixel data gets recompressed, which is the tradeoff for changing format. GIF is limited to 256 colors by the format itself (built by this page from scratch, since no browser can encode GIF on its own — which also means the output has no comment blocks or XMP, nothing to strip afterward because nothing extra was ever written). BMP, SVG, and ICO can be read and cleaned but can't be a conversion <em>target</em> — no browser can encode to those from canvas. AVIF encoding isn't supported everywhere yet; if your browser can't produce it, that file falls back to a lossless clean in its original format and is noted below. HEIC likewise only decodes for conversion in browsers with native HEIC support (mainly Safari).</p>
+        <p class="convert-note">"Keep original" is byte-for-byte lossless. Converting recompresses the image as part of changing format — GIF is limited to 256 colors by the format itself. See the FAQ below for why some formats can only be a source, not a target.</p>
       </div>
 
       <div id="downloadModeSection">
@@ -645,6 +695,7 @@
           <label><input type="radio" name="mode" value="separate" checked><span>Separate downloads</span></label>
           <label><input type="radio" name="mode" value="zip"><span>Single .zip</span></label>
         </div>
+        <label class="checkbox-row"><input type="checkbox" id="genericNames"><span>Use generic filenames (image-1.jpg, image-2.png…) instead of the original name — a filename itself can carry identifying info</span></label>
       </div>
 
       <div class="actions">
@@ -660,41 +711,61 @@
     </div>
   </div>
 
+  <div class="faq-section">
+    <div class="panel-label">Frequently asked</div>
+
+    <details class="faq-item">
+      <summary>Is my photo actually private, or does it get uploaded somewhere?</summary>
+      <div class="faq-answer">Everything happens inside this browser tab. There's no server this tool talks to — the page even overrides <code>fetch</code> and <code>XMLHttpRequest</code> on load, so any network call, intentional or not, gets blocked and counted live in the badge near the top. It should read 0 for your entire visit.</div>
+    </details>
+
+    <details class="faq-item">
+      <summary>My photo shows no GPS even though location was on. Is that a bug?</summary>
+      <div class="faq-answer">Usually not. Some cameras write a GPS tag with placeholder (0,0) coordinates when location tagging is enabled but no satellite fix was acquired yet — common right when opening the camera, or indoors. You'll see that flagged as "no location fix" rather than a real coordinate. Genuinely missing GPS just means the camera never wrote a location tag at all.</div>
+    </details>
+
+    <details class="faq-item">
+      <summary>What does "Verified clean" actually mean?</summary>
+      <div class="faq-answer">After cleaning a file, this tool re-scans the result with the exact same detector that found the original metadata. "0 fields remain" is a measured result from that re-scan, not an assumption — if anything survives, it shows up as "partial" instead, telling you honestly rather than claiming success either way.</div>
+    </details>
+
+    <details class="faq-item">
+      <summary>Why can't I convert to GIF, BMP, SVG, or ICO?</summary>
+      <div class="faq-answer">Those can all be read and cleaned as a source file, but no browser can encode <em>to</em> them from a canvas — that capability just doesn't exist in the platform. GIF is the exception: it's supported as a conversion target because this page includes its own from-scratch GIF encoder, built specifically since browsers won't do it natively.</div>
+    </details>
+
+    <details class="faq-item">
+      <summary>What's the difference between the three modes?</summary>
+      <div class="faq-answer"><b>Inspect</b> is read-only — see what's embedded without changing anything. <b>Remove metadata</b> strips it while keeping your original format, byte-for-byte lossless. <b>Convert format</b> changes the file type (which also strips metadata as a side effect, but recompresses the image in the process).</div>
+    </details>
+
+    <details class="faq-item">
+      <summary>Is this really free, with no signup or limits?</summary>
+      <div class="faq-answer">Yes. There's no account, no email, no server-side processing to meter or pay for — the heavy lifting happens on your own device, so there's nothing that scales cost with usage. Use it on as many files as you want.</div>
+    </details>
+
+    <details class="faq-item">
+      <summary>Why keep the color profile if it's "metadata"?</summary>
+      <div class="faq-answer">A color profile (ICC) affects how colors render on screen — it's not a record of who took the photo or where. Removing it can shift how an image looks (especially from cameras shooting in a wide color gamut), so it's deliberately left alone while the actually identifying tags — GPS, camera serials, author info — are removed.</div>
+    </details>
+
+    <details class="faq-item">
+      <summary>Does HEIC/AVIF work the same as JPEG or PNG?</summary>
+      <div class="faq-answer">Reading and cleaning HEIC/AVIF works the same way (metadata is zeroed out in place rather than cut, which is safer against corrupting those formats). Converting <em>to</em> or <em>from</em> HEIC depends on your browser's own decoder — mainly Safari supports it natively. If your browser can't handle it, that file falls back to a lossless clean instead of failing silently.</div>
+    </details>
+
+    <details class="faq-item">
+      <summary>How do I see exactly what's in a file, or hide part of a photo?</summary>
+      <div class="faq-answer">Tap any row with fields found to expand it — a GPS tag shows real decoded coordinates with a map link, not just "present." For hiding something visible in the photo itself (a face, a license plate, a document in the background), the small redact button on eligible rows opens an editor where you draw black boxes directly onto the image. That's burned into the pixels when applied, which is a different, stronger kind of privacy than metadata removal — there's nothing left to find or strip afterward.</div>
+    </details>
+
+  </div>
+
+  </main>
   <footer>
-    <b>How this works —</b> with "Keep original," each file's own byte structure is
-    read directly and the metadata segments (EXIF, GPS, timestamps, author/software
-    tags, Photoshop caption data, GIF comment/XMP blocks) are cut out at the byte
-    level. Compressed image data is never decoded or re-encoded, so pixel quality is
-    unchanged — this is removal, not recompression. Color profiles are left in place
-    on purpose, since they affect how colors render rather than who took the photo.
-    HEIC and AVIF are handled a little differently: rather than cutting the metadata
-    item out of the container, its contents are overwritten with zeros in place,
-    which is safer against corrupting the file — if a file's structure can't be
-    confidently read, the original is left untouched and flagged rather than risked.
-    BMP and ICO have no metadata format to begin with, so they pass through
-    unchanged. SVG is handled as text, not bytes: XML comments, the spec's own
-    &lt;metadata&gt; element (where Illustrator/Inkscape/Figma conventionally write
-    creator info), embedded scripts, and Inkscape-specific attributes are stripped;
-    visible content like &lt;title&gt;/&lt;desc&gt; is left alone since that's part
-    of the image, not a record of where it came from.<br><br>
-    <b>Converting</b> to JPEG, PNG, WebP, or AVIF instead decodes the image and
-    re-encodes it from scratch, which also strips metadata but recompresses pixel
-    data — the necessary tradeoff of changing format. If your browser can't produce
-    the format you picked, that file automatically falls back to a lossless clean in
-    its original format, and it's called out in the list rather than failing
-    silently.<br><br>
-    <b>Verified, not just promised —</b> after cleaning, each file is re-scanned with
-    the same detector used to find the original metadata, so you see an actual
-    "0 fields remain" result rather than a claim. This page also overrides
-    <code>fetch</code> and <code>XMLHttpRequest</code> on load, so any network call —
-    intentional or not — is blocked and counted live in the badge above.<br><br>
-    <b>Two more things worth knowing —</b> tap any row with fields found to see
-    exactly what was in it; a GPS tag is decoded into real coordinates with a map
-    link, not just flagged as "present." And the small ▭ button on eligible rows
-    opens a redaction editor where you can draw black boxes over anything visible
-    in the photo itself — a face, a plate, a document in the background — which is
-    a different kind of privacy than metadata and gets burned into the pixels when
-    applied, not just added metadata that could be found and stripped again later.
+    Built to leave nothing behind: no account, no upload, no tracking. If something
+    looks wrong or you want a format added, that's about the only kind of feedback
+    this page can't collect on its own — there's simply nowhere for it to go.
   </footer>
 
 </div>
@@ -703,7 +774,7 @@
   <div class="redact-panel">
     <div class="redact-header">
       <span id="redactFileName"></span>
-      <button type="button" class="redact-close" id="redactClose" aria-label="Close">×</button>
+      <button type="button" class="redact-close" id="redactClose" aria-label="Close"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
     </div>
     <div class="redact-canvas-wrap">
       <canvas id="redactCanvas"></canvas>
@@ -720,6 +791,11 @@
 
 <script>
 (function(){
+  // ---------- shared icons (crisp SVGs instead of relying on font-dependent
+  // unicode glyphs, which render inconsistently across devices) ----------
+  const ICON_CLOSE = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>';
+  const ICON_REDACT = '<svg width="14" height="14" viewBox="0 0 24 24"><rect x="3" y="9" width="18" height="6" rx="1" fill="currentColor"/></svg>';
+
   // ---------- live network self-check ----------
   let netAttempts = 0;
   function flagNetworkAttempt(detail){
@@ -1072,17 +1148,22 @@
 
   function summarizeFields(fields){
     if(fields.length === 0) return { text:'No metadata found', tone:'ok' };
-    const hasGPS = fields.some(f=> f.gps || f.k === 'GPS location' || f.k === 'GPS coordinates');
+    const hasGPS = fields.some(f=> f.gps || f.k === 'GPS location' || f.k === 'GPS coordinates' || f.k === 'XMP GPS location');
+    const hasSerial = fields.some(f=> f.k === 'Camera serial number' || f.k === 'Lens serial number');
+    const hasAuthor = fields.some(f=> f.k === 'Artist' || f.k === 'Copyright' || f.k === 'XMP creator' ||
+      f.k === 'XMP rights' || f.k === 'IPTC: By-line (author)' || f.k === 'IPTC: Copyright notice');
     const notable = [];
     if(hasGPS) notable.push('GPS location');
+    if(hasSerial) notable.push('device serial number');
     if(fields.some(f=> f.k === 'Camera make' || f.k === 'Camera model')) notable.push('camera info');
     if(fields.some(f=> f.k === 'Date/time' || f.k === 'Last modified')) notable.push('timestamp');
-    if(fields.some(f=> f.k === 'Artist' || f.k === 'Copyright')) notable.push('author info');
+    if(hasAuthor) notable.push('author/creator info');
+    if(fields.some(f=> f.k.startsWith('IPTC:') && f.k !== 'IPTC: Copyright notice' && f.k !== 'IPTC: By-line (author)')) notable.push('IPTC caption/location fields');
     if(notable.length === 0){
       const n = fields.length;
       return { text: `${n} field${n===1?'':'s'} found`, tone:'warn' };
     }
-    return { text: 'Contains ' + notable.join(', '), tone: hasGPS ? 'err' : 'warn' };
+    return { text: 'Contains ' + notable.join(', '), tone: (hasGPS || hasSerial) ? 'err' : 'warn' };
   }
 
   function renderQueue(){
@@ -1133,16 +1214,15 @@
 
       const removable = item.status === 'analyzing' || item.status === 'ready';
       const removeHtml = removable
-        ? `<button type="button" class="remove-item" data-id="${item.id}" title="Remove from queue" aria-label="Remove ${escapeHtml(item.file.name)}">×</button>`
+        ? `<button type="button" class="remove-item" data-id="${item.id}" title="Remove from queue" aria-label="Remove ${escapeHtml(item.file.name)}">${ICON_CLOSE}</button>`
         : '';
 
       const canRedact = item.status === 'ready' && REDACT_ELIGIBLE.test(item.file.type || '');
       const redactHtml = canRedact
-        ? `<button type="button" class="redact-item" data-id="${item.id}" title="Draw redaction boxes over this image" aria-label="Redact ${escapeHtml(item.file.name)}">▭</button>`
+        ? `<button type="button" class="redact-item" data-id="${item.id}" title="Draw redaction boxes over this image" aria-label="Redact ${escapeHtml(item.file.name)}">${ICON_REDACT}</button>`
         : '';
 
       const topContent = `
-        <span class="tag">Ex. ${i+1}</span>
         ${thumbHtml}
         <div class="info">
           <div class="fname">${escapeHtml(item.file.name)}</div>
@@ -1252,8 +1332,84 @@
     0x8825: 'GPS coordinates', 0x829A: 'Exposure time', 0x829D: 'F-number',
     0x8827: 'ISO speed', 0x920A: 'Focal length', 0xA002: 'Image width (EXIF)',
     0xA003: 'Image height (EXIF)', 0x9286: 'User comment', 0x013B: 'Artist',
-    0x8298: 'Copyright', 0xA430: 'Camera owner', 0xA433: 'Lens make', 0xA434: 'Lens model'
+    0x8298: 'Copyright', 0xA430: 'Camera owner', 0xA431: 'Camera serial number',
+    0xA433: 'Lens make', 0xA434: 'Lens model', 0xA435: 'Lens serial number'
   };
+
+  // ---------- XMP (a second, separate metadata block some JPEGs carry
+  // alongside EXIF — Adobe's format, XML/RDF-based rather than binary) ----------
+  function parseXMPPacket(text){
+    const fields = [];
+    const creatorMatch = text.match(/<dc:creator>[\s\S]*?<rdf:li[^>]*>([^<]+)<\/rdf:li>/);
+    if(creatorMatch) fields.push({k:'XMP creator', v: creatorMatch[1].trim()});
+    const rightsMatch = text.match(/<dc:rights>[\s\S]*?<rdf:li[^>]*>([^<]+)<\/rdf:li>/);
+    if(rightsMatch) fields.push({k:'XMP rights', v: rightsMatch[1].trim()});
+    const toolMatch = text.match(/xmp:CreatorTool="([^"]+)"|<xmp:CreatorTool>([^<]+)<\/xmp:CreatorTool>/);
+    if(toolMatch) fields.push({k:'XMP creator tool', v:(toolMatch[1]||toolMatch[2]).trim()});
+    const gpsLatMatch = text.match(/exif:GPSLatitude="([^"]+)"/);
+    const gpsLonMatch = text.match(/exif:GPSLongitude="([^"]+)"/);
+    if(gpsLatMatch && gpsLonMatch) fields.push({k:'XMP GPS location', v: gpsLatMatch[1]+', '+gpsLonMatch[1]});
+    if(fields.length === 0) fields.push({k:'XMP metadata', v:'embedded'});
+    return fields;
+  }
+
+  // ---------- IPTC (embedded inside the Photoshop APP13 segment as an
+  // "8BIM" resource block) — often carries an actual byline/contact name,
+  // more personally identifying than most EXIF tags ----------
+  const IPTC_DATASETS = {
+    5: 'Object name', 80: 'By-line (author)', 85: 'By-line title',
+    90: 'City', 95: 'Province/state', 101: 'Country',
+    105: 'Headline', 110: 'Credit', 115: 'Source',
+    116: 'Copyright notice', 120: 'Caption'
+  };
+
+  function parseIPTCData(dv, dataStart, dataLen, fields){
+    let offset = dataStart;
+    const end = dataStart + dataLen;
+    let guard = 0;
+    while(offset < end - 4 && guard++ < 10000){
+      if(dv.getUint8(offset) !== 0x1C){ offset++; continue; }
+      const record = dv.getUint8(offset+1);
+      const dataset = dv.getUint8(offset+2);
+      const lenByte1 = dv.getUint8(offset+3);
+      if((lenByte1 & 0x80) !== 0) break; // extended dataset length, rare — bail cleanly
+      const length = dv.getUint16(offset+3);
+      const headerLen = 5;
+      if(offset + headerLen + length > end) break;
+      if(record === 2 && IPTC_DATASETS[dataset]){
+        const strBytes = new Uint8Array(dv.buffer, dv.byteOffset + offset + headerLen, length);
+        const str = new TextDecoder('utf-8', {fatal:false}).decode(strBytes).trim();
+        if(str) fields.push({k: 'IPTC: ' + IPTC_DATASETS[dataset], v: str});
+      }
+      offset += headerLen + length;
+    }
+  }
+
+  function parsePhotoshopIRB(dv, start, segDataLen, fields){
+    const sigStr = readAscii(dv, start, 13);
+    if(sigStr !== 'Photoshop 3.0'){ fields.push({k:'Photoshop IRB data', v:'embedded'}); return; }
+    let offset = start + 14; // "Photoshop 3.0" + null terminator
+    const end = start + segDataLen;
+    let guard = 0;
+    while(offset < end - 12 && guard++ < 1000){
+      const sig = readAscii(dv, offset, 4);
+      if(sig !== '8BIM') break;
+      const resId = dv.getUint16(offset+4);
+      const nameLen = dv.getUint8(offset+6);
+      let nameTotal = 1 + nameLen;
+      if(nameTotal % 2 !== 0) nameTotal++;
+      const sizeOffset = offset + 6 + nameTotal;
+      const size = dv.getUint32(sizeOffset);
+      const dataOffset = sizeOffset + 4;
+      if(resId === 0x0404) parseIPTCData(dv, dataOffset, size, fields);
+      let paddedSize = size;
+      if(paddedSize % 2 !== 0) paddedSize++;
+      offset = dataOffset + paddedSize;
+    }
+    if(!fields.some(f=>f.k.startsWith('IPTC'))){
+      fields.push({k:'Photoshop IRB data', v:'embedded'});
+    }
+  }
 
   function parseJPEG(dv){
     const fields = [];
@@ -1267,12 +1423,29 @@
       const segLen = dv.getUint16(offset+2);
       if(marker === 0xE1){
         const start = offset + 4;
-        const tag = readAscii(dv, start, 4);
-        if(tag === 'Exif'){
+        const tag4 = readAscii(dv, start, 4);
+        if(tag4 === 'Exif'){
           try{ parseTIFF(dv, start + 6, fields); }catch(e){}
+        } else {
+          try{
+            const sigLen = Math.min(29, segLen - 2);
+            const sig = readAscii(dv, start, sigLen);
+            if(sig.indexOf('http://ns.adobe.com/xap') === 0){
+              const xmpDataStart = start + 29;
+              const xmpLen = (segLen - 2) - 29;
+              if(xmpLen > 0){
+                const xmpBytes = new Uint8Array(dv.buffer, dv.byteOffset + xmpDataStart, xmpLen);
+                const xmpText = new TextDecoder('utf-8', {fatal:false}).decode(xmpBytes);
+                fields.push(...parseXMPPacket(xmpText));
+              }
+            }
+          }catch(e){}
         }
       }
-      if(marker === 0xED){ fields.push({k:'Photoshop IRB data', v:'embedded'}); }
+      if(marker === 0xED){
+        try{ parsePhotoshopIRB(dv, offset+4, segLen-2, fields); }
+        catch(e){ fields.push({k:'Photoshop IRB data', v:'embedded'}); }
+      }
       if(marker === 0xDA) break;
       offset += 2 + segLen;
     }
@@ -2110,6 +2283,7 @@
     const mode = document.querySelector('input[name="mode"]:checked').value;
     const target = uiMode === 'metadata' ? 'keep' : document.querySelector('input[name="convert"]:checked').value; // 'keep'|'jpeg'|'png'|'webp'|'avif'
     const quality = parseInt(qualitySlider.value, 10) / 100;
+    const useGenericNames = document.getElementById('genericNames').checked;
 
     const pending = queue.filter(it=> it.status === 'ready');
 
@@ -2155,7 +2329,9 @@
       const origExt = dot === -1 ? '' : item.file.name.slice(dot);
       const base = dot === -1 ? item.file.name : item.file.name.slice(0,dot);
       const outExt = converted ? extForFormat(target) : origExt;
-      item.outName = base + '-cleared' + outExt;
+      item.outName = useGenericNames
+        ? `image-${queue.indexOf(item)+1}${outExt}`
+        : base + '-cleared' + outExt;
       item.outMime = converted ? mimeForTarget(target) : (item.file.type || 'application/octet-stream');
 
       renderQueue();
