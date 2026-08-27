@@ -2,6 +2,17 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<script>
+  // Applied synchronously, before the stylesheet paints, so there's no
+  // flash of the wrong theme on load.
+  (function(){
+    try{
+      if(localStorage.getItem('clearfile-theme') === 'light'){
+        document.documentElement.setAttribute('data-theme', 'light');
+      }
+    }catch(e){}
+  })();
+</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Clearfile — Free Photo Metadata Remover & Privacy Tool</title>
 <meta name="description" content="Remove EXIF/GPS metadata, inspect what a photo reveals, or convert image formats — entirely in your browser. No signup, no email, no uploads, free and unlimited.">
@@ -49,9 +60,40 @@
     --line: #33373a;
     --ok: #5c8a6e;
     --warn: #c99a4a;
+    --sunken: #0f1112;
+    --sunken-border: #1c1f20;
+    --hover-tint: #1c1613;
+    --text-2: #b8bcbc;
+    --text-3: #c7cbcb;
+    --text-4: #9a9e9e;
+    --text-5: #7a7e7e;
+    --text-6: #6b6f6f;
+    --text-7: #b0b4b4;
     --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
     --serif: Georgia, "Times New Roman", serif;
     --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  }
+  html[data-theme="light"]{
+    --bg: #f7f3ea;
+    --bg-raised: #ffffff;
+    --paper: #1c1e1e;
+    --paper-dim: #33362f;
+    --ink: #efebe2;
+    --redact: #b23a2e;
+    --redact-dim: #8f2f24;
+    --muted: #6b6f6f;
+    --line: #ddd7c8;
+    --ok: #2f6b47;
+    --warn: #8a651f;
+    --sunken: #f0ebdd;
+    --sunken-border: #e2dcca;
+    --hover-tint: #f7e9e6;
+    --text-2: #45483f;
+    --text-3: #2a2d29;
+    --text-4: #55584f;
+    --text-5: #83867c;
+    --text-6: #83867c;
+    --text-7: #45483f;
   }
   *{box-sizing:border-box; margin:0; padding:0;}
   body{
@@ -59,9 +101,13 @@
     color:var(--paper);
     font-family:var(--sans);
     min-height:100vh;
+    overflow-x:hidden;
     -webkit-font-smoothing:antialiased;
   }
   .wrap{max-width:820px; margin:0 auto; padding:56px 24px 80px;}
+  @media (min-width:1100px){
+    .wrap{max-width:1040px;}
+  }
 
   .eyebrow{
     font-family:var(--mono);
@@ -93,7 +139,7 @@
   .sub{
     font-size:15px;
     line-height:1.6;
-    color:#b8bcbc;
+    color:var(--text-2);
     max-width:56ch;
     margin-bottom:8px;
   }
@@ -145,7 +191,7 @@
     color:var(--paper);
     transition:border-color .15s ease, background .15s ease;
   }
-  .mode-card:hover{border-color:var(--redact); background:#1c1613;}
+  .mode-card:hover{border-color:var(--redact); background:var(--hover-tint);}
   .mode-card-tag{
     font-family:var(--mono);
     font-size:11px;
@@ -180,7 +226,7 @@
     box-shadow:0 4px 14px rgba(0,0,0,0.4);
     transition:border-color .15s ease, background .15s ease;
   }
-  .back-link:hover{border-color:var(--redact); background:#1c1613;}
+  .back-link:hover{border-color:var(--redact); background:var(--hover-tint);}
 
 
   .workspace{display:none;}
@@ -206,6 +252,28 @@
     border:1px solid var(--line);
     padding:6px 11px;
   }
+
+  .theme-toggle{
+    position:fixed;
+    top:16px;
+    right:16px;
+    z-index:50;
+    width:38px;
+    height:38px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:var(--bg-raised);
+    border:1px solid var(--line);
+    color:var(--paper);
+    cursor:pointer;
+    transition:border-color .15s ease, background .15s ease;
+  }
+  .theme-toggle:hover{border-color:var(--redact); background:var(--hover-tint);}
+  .theme-toggle svg{display:block;}
+  .theme-toggle .icon-moon{display:none;}
+  html[data-theme="light"] .theme-toggle .icon-sun{display:none;}
+  html[data-theme="light"] .theme-toggle .icon-moon{display:block;}
 
   @media (max-width:720px){
     .mode-picker{grid-template-columns:1fr;}
@@ -254,7 +322,7 @@
   .qrow-static .qrow-top::before{ background-color:transparent; width:0; }
   .qrow-details{
     border-top:1px solid var(--line);
-    background:#0f1112;
+    background:var(--sunken);
   }
   .field-line{
     display:flex;
@@ -264,21 +332,21 @@
     padding:7px 16px 7px 34px;
     font-family:var(--mono);
     font-size:11px;
-    color:#9a9e9e;
-    border-bottom:1px solid #1c1f20;
+    color:var(--text-4);
+    border-bottom:1px solid var(--sunken-border);
   }
   .field-line:last-child{border-bottom:none;}
-  .field-line .k{color:#7a7e7e; flex-shrink:0;}
-  .field-line .v{color:#c7cbcb; text-align:right; flex:1; min-width:0; overflow-wrap:anywhere;}
+  .field-line .k{color:var(--text-5); flex-shrink:0;}
+  .field-line .v{color:var(--text-3); text-align:right; flex:1; min-width:0; overflow-wrap:anywhere;}
   .field-line .v a{color:var(--ok); margin-left:6px;}
   .field-note{
     padding:0 16px 10px 34px;
     font-family:var(--sans);
     font-size:10.5px;
     font-style:italic;
-    color:#6b6f6f;
+    color:var(--text-6);
     line-height:1.5;
-    border-bottom:1px solid #1c1f20;
+    border-bottom:1px solid var(--sunken-border);
   }
   .field-note:last-child{border-bottom:none;}
   .qrow .thumb{
@@ -475,7 +543,7 @@
     color:var(--muted);
     line-height:1.7;
   }
-  footer b{color:#b8bcbc;}
+  footer b{color:var(--text-2);}
   footer code{
     font-family:var(--mono);
     background:var(--bg-raised);
@@ -521,7 +589,7 @@
     padding:0 18px 18px 34px;
     font-size:13px;
     line-height:1.65;
-    color:#b0b4b4;
+    color:var(--text-7);
     max-width:64ch;
   }
   .faq-answer code{
@@ -625,10 +693,13 @@
 </style>
 </head>
 <body>
+<button type="button" class="theme-toggle" id="themeToggle" aria-label="Toggle light and dark mode">
+  <svg class="icon-sun" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4.5"/><path d="M12 2v2.5M12 19.5V22M4.6 4.6l1.8 1.8M17.6 17.6l1.8 1.8M2 12h2.5M19.5 12H22M4.6 19.4l1.8-1.8M17.6 6.4l1.8-1.8"/></svg>
+  <svg class="icon-moon" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M21 12.8A9 9 0 1111.2 3a7 7 0 009.8 9.8z"/></svg>
+</button>
 <div class="wrap">
 <main>
 
-  <div class="eyebrow">Local processing only</div>
   <h1>Strip the paper trail<br><em>before it leaves the room.</em></h1>
   <p class="sub">Remove hidden metadata, see what's in a photo, or convert its format — nothing ever leaves your browser.</p>
   <div class="badge-strip">
@@ -637,7 +708,6 @@
     <span>Free</span>
     <span>Unlimited</span>
     <span>Nothing uploaded</span>
-    <span>Network requests: <b id="netCount" style="color:var(--ok);">0</b></span>
   </div>
 
   <div class="mode-picker" id="modePicker">
@@ -716,7 +786,7 @@
 
     <details class="faq-item">
       <summary>Is my photo actually private, or does it get uploaded somewhere?</summary>
-      <div class="faq-answer">Everything happens inside this browser tab. There's no server this tool talks to — the page even overrides <code>fetch</code> and <code>XMLHttpRequest</code> on load, so any network call, intentional or not, gets blocked and counted live in the badge near the top. It should read 0 for your entire visit.</div>
+      <div class="faq-answer">Everything happens inside this browser tab. There's no server this tool talks to — the page even overrides <code>fetch</code> and <code>XMLHttpRequest</code> on load, so any network call, intentional or not, gets silently blocked rather than sent. Check your browser's own network tab if you want to see for yourself.</div>
     </details>
 
     <details class="faq-item">
@@ -791,6 +861,19 @@
 
 <script>
 (function(){
+  // ---------- light/dark theme toggle ----------
+  const themeToggle = document.getElementById('themeToggle');
+  themeToggle.addEventListener('click', ()=>{
+    const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+    if(isLight){
+      document.documentElement.removeAttribute('data-theme');
+      try{ localStorage.setItem('clearfile-theme', 'dark'); }catch(e){}
+    } else {
+      document.documentElement.setAttribute('data-theme', 'light');
+      try{ localStorage.setItem('clearfile-theme', 'light'); }catch(e){}
+    }
+  });
+
   // ---------- shared icons (crisp SVGs instead of relying on font-dependent
   // unicode glyphs, which render inconsistently across devices) ----------
   const ICON_CLOSE = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>';
