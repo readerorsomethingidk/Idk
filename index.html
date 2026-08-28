@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OnlyFans Content Downloader</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #1a1a1a;
+            color: #fff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .container {
+            max-width: 800px;
+            margin-top: 50px;
+        }
+        .card {
+            background-color: #2a2a2a;
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+        .card-header {
+            background-color: #3a3a3a;
+            border-bottom: 1px solid #444;
+            border-radius: 15px 15px 0 0 !important;
+            font-weight: 600;
+        }
+        .btn-primary {
+            background-color: #00aeff;
+            border: none;
+        }
+        .btn-primary:hover {
+            background-color: #0099dd;
+        }
+        .form-control {
+            background-color: #333;
+            border: 1px solid #444;
+            color: #fff;
+        }
+        .form-control:focus {
+            background-color: #333;
+            border: 1px solid #00aeff;
+            color: #fff;
+            box-shadow: 0 0 0 0.25rem rgba(0, 174, 255, 0.25);
+        }
+        .progress {
+            height: 10px;
+            background-color: #444;
+        }
+        .progress-bar {
+            background-color: #00aeff;
+        }
+        .download-item {
+            border-bottom: 1px solid #444;
+            padding: 10px 0;
+        }
+        .download-item:last-child {
+            border-bottom: none;
+        }
+        .status-message {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 8px;
+        }
+        .alert {
+            background-color: #3a3a3a;
+            border: 1px solid #444;
+            color: #fff;
+        }
+        .thumbnail {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+        }
+        .media-type-badge {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: bold;
+        }
+        .video-badge {
+            background-color: #ff4757;
+        }
+        .image-badge {
+            background-color: #00aeff;
+        }
+        .media-container {
+            position: relative;
+            margin-bottom: 10px;
+        }
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #00aeff;
+            animation: spin 1s ease-in-out infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <div class="card-header text-center">
+                <h3>OnlyFans Content Downloader</h3>
+            </div>
+            <div class="card-body">
+                <div class="mb-4">
+                    <label for="onlyfansLink" class="form-label">OnlyFans Post Link</label>
+                    <input type="text" class="form-control" id="onlyfansLink" placeholder="https://onlyfans.com/username/post/1234567890">
+                </div>
+                
+                <div class="d-grid">
+                    <button id="fetchContent" class="btn btn-primary">Fetch Content</button>
+                </div>
+                
+                <div id="statusMessage" class="status-message" style="display: none;"></div>
+                
+                <div class="mt-4">
+                    <div id="progressContainer" style="display: none;">
+                        <label class="form-label">Download Progress</label>
+                        <div class="progress">
+                            <div id="progressBar" class="progress-bar" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">0%</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="downloadList" class="mt-4"></div>
+            </div>
+        </div>
+        
+        <div class="mt-4 card">
+            <div class="card-header">
+                <h5>Instructions</h5>
+            </div>
+            <div class="card-body">
+                <ol>
+                    <li>Copy the OnlyFans post URL</li>
+                    <li>Paste it in the input field above</li>
+                    <li>Click "Fetch Content" to analyze the post</li>
+                    <li>Select the media files you want to download</li>
+                    <li>Click "Download" to save them to your device</li>
+                </ol>
+                <div class="alert alert-warning mt-3">
+                    <strong>Note:</strong> This tool is for educational purposes only. Respect content creators' rights and terms of service.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const fetchButton = document.getElementById('fetchContent');
+            const onlyfansLink = document.getElementById('onlyfansLink');
+            const statusMessage = document.getElementById('statusMessage');
+            const downloadList = document.getElementById('downloadList');
+            const progressContainer = document.getElementById('progressContainer');
+            const progressBar = document.getElementById('progressBar');
+            
+            fetchButton.addEventListener('click', function() {
+                const url = onlyfansLink.value.trim();
+                
+                if (!url) {
+                    showStatus('Please enter a valid OnlyFans URL', 'danger');
+                    return;
+                }
+                
+                if (!url.includes('onlyfans.com/')) {
+                    showStatus('Please enter a valid OnlyFans URL', 'danger');
+                    return;
+                }
+                
+                showStatus('Fetching content...', 'info');
+                progressContainer.style.display = 'block';
+                updateProgress(10);
+                
+                // Simulate fetching content
+                setTimeout(() => {
+                    // Extract post ID from URL
+                    const postId = extractPostId(url);
+                    
+                    if (!postId) {
+                        showStatus('Could not extract post ID from the URL', 'danger');
+                        progressContainer.style.display = 'none';
+                        return;
+                    }
+                    
+                    updateProgress(30);
+                    
+                    // Simulate API call to get media
+                    setTimeout(() => {
+                        const mediaItems = generateMockMedia(postId);
+                        displayMediaItems(mediaItems);
+                        updateProgress(100);
+                        showStatus(`Found \${mediaItems.length} media items. Select items to download.`, 'success');
+                        
+                        setTimeout(() => {
+                            progressContainer.style.display = 'none';
+                        }, 1000);
+                    }, 1000);
+                }, 500);
+            });
+            
+            function extractPostId(url) {
+                // Extract post ID from URL pattern
+                const match = url.match(/\/post\/(\d+)/);
+                return match ? match[1] : null;
+            }
+            
+            function generateMockMedia(postId) {
+                // Generate mock media items based on post ID
+                const numItems = Math.floor(Math.random() * 5) + 1;
+                const mediaItems = [];
+                
+                for (let i = 0; i < numItems; i++) {
+                    const isVideo = Math.random() > 0.5;
+                    mediaItems.push({
+                        id: `${postId}_${i}`,
+                        type: isVideo ? 'video' : 'image',
+                        url: `https://example.com/onlyfans/${postId}_${isVideo ? 'video' : 'image'}_${i}.${isVideo ? 'mp4' : 'jpg'}`,
+                        thumbnail: `https://picsum.photos/seed/${postId}${i}/300/200.jpg`,
+                        size: isVideo ? `\${Math.floor(Math.random() * 50 + 10)}MB` : `\${Math.floor(Math.random() * 5 + 1)}MB`,
+                        name: `onlyfans_${postId}_${isVideo ? 'video' : 'photo'}_${i}.${isVideo ? 'mp4' : 'jpg'}`
+                    });
+                }
+                
+                return mediaItems;
+            }
+            
+            function displayMediaItems(items) {
+                downloadList.innerHTML = '';
+                
+                if (items.length === 0) {
+                    downloadList.innerHTML = '<p>No media found in this post.</p>';
+                    return;
+                }
+                
+                const listContainer = document.createElement('div');
+                
+                items.forEach(item => {
+                    const itemDiv = document.createElement('div');
+                    itemDiv.className = 'download-item';
+                    
+                    const rowDiv = document.createElement('div');
+                    rowDiv.className = 'row align-items-center';
+                    
+                    const col1 = document.createElement('div');
+                    col1.className = 'col-md-3';
+                    
+                    const mediaContainer = document.createElement('div');
+                    mediaContainer.className = 'media-container';
+                    
+                    const img = document.createElement('img');
+                    img.src = item.thumbnail;
+                    img.className = 'img-fluid rounded thumbnail';
+                    img.alt = item.type;
+                    
+                    const badge = document.createElement('span');
+                    badge.className = `media-type-badge ${item.type === 'video' ? 'video-badge' : 'image-badge'}`;
+                    badge.textContent = item.type.toUpperCase();
+                    
+                    mediaContainer.appendChild(img);
+                    mediaContainer.appendChild(badge);
+                    col1.appendChild(mediaContainer);
+                    
+                    const col2 = document.createElement('div');
+                    col2.className = 'col-md-6';
+                    col2.innerHTML = `
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" value="${item.id}" id="check_${item.id}" checked>
+                            <label class="form-check-label" for="check_${item.id}">
+                                <strong>${item.name}</strong><br>
+                                <small class="text-muted">${item.size}</small>
+                            </label>
+                        </div>
+                    `;
+                    
+                    const col3 = document.createElement('div');
+                    col3.className = 'col-md-3 text-end';
+                    
+                    const downloadBtn = document.createElement('button');
+                    downloadBtn.className = 'btn btn-sm btn-outline-primary download-btn';
+                    downloadBtn.textContent = 'Download';
+                    downloadBtn.dataset.url = item.url;
+                    downloadBtn.dataset.name = item.name;
+                    col3.appendChild(downloadBtn);
+                    
+                    rowDiv.appendChild(col1);
+                    rowDiv.appendChild(col2);
+                    rowDiv.appendChild(col3);
+                    itemDiv.appendChild(rowDiv);
+                    listContainer.appendChild(itemDiv);
+                });
+                
+                const downloadAllBtn = document.createElement('div');
+                downloadAllBtn.className = 'mt-3 text-center';
+                downloadAllBtn.innerHTML = '<button id="downloadAll" class="btn btn-success">Download Selected</button>';
+                listContainer.appendChild(downloadAllBtn);
+                
+                downloadList.appendChild(listContainer);
+                
+                // Add event listeners for download buttons
+                document.querySelectorAll('.download-btn').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        downloadFile(this.dataset.url, this.dataset.name);
+                    });
+                });
+                
+                document.getElementById('downloadAll').addEventListener('click', function() {
+                    const selectedItems = [];
+                    document.querySelectorAll('.form-check-input:checked').forEach(checkbox => {
+                        const id = checkbox.value;
+                        const item = items.find(i => i.id === id);
+                        if (item) {
+                            selectedItems.push(item);
+                        }
+                    });
+                    
+                    if (selectedItems.length === 0) {
+                        showStatus('Please select at least one item to download', 'warning');
+                        return;
+                    }
+                    
+                    showStatus(`Preparing to download ${selectedItems.length} item(s)...`, 'info');
+                    progressContainer.style.display = 'block';
+                    
+                    // Simulate batch download
+                    let completed = 0;
+                    selectedItems.forEach((item, index) => {
+                        setTimeout(() => {
+                            downloadFile(item.url, item.name);
+                            completed++;
+                            updateProgress(Math.floor((completed / selectedItems.length) * 100));
+                            
+                            if (completed === selectedItems.length) {
+                                showStatus(`Successfully downloaded ${selectedItems.length} item(s)`, 'success');
+                                setTimeout(() => {
+                                    progressContainer.style.display = 'none';
+                                }, 1000);
+                            }
+                        }, index * 500); // Stagger downloads
+                    });
+                });
+            }
+            
+            function downloadFile(url, filename) {
+                // Create a temporary link element to trigger download
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = filename;
+                link.style.display = 'none';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
+            
+            function showStatus(message, type) {
+                statusMessage.innerHTML = `<div class="alert alert-${type}">${message}</div>`;
+                statusMessage.style.display = 'block';
+                
+                // Auto hide after 5 seconds for success messages
+                if (type === 'success') {
+                    setTimeout(() => {
+                        statusMessage.style.display = 'none';
+                    }, 5000);
+                }
+            }
+            
+            function updateProgress(percent) {
+                progressBar.style.width = `${percent}%`;
+                progressBar.setAttribute('aria-valuenow', percent);
+                progressBar.textContent = `${percent}%`;
+            }
+            
+            // Simulate URL parsing from clipboard
+            onlyfansLink.addEventListener('paste', function(e) {
+                setTimeout(() => {
+                    const pastedText = this.value.trim();
+                    if (pastedText.includes('onlyfans.com')) {
+                        showStatus('OnlyFans URL detected. Click "Fetch Content" to continue.', 'info');
+                    }
+                }, 100);
+            });
+            
+            // Add keyboard shortcut (Ctrl/Cmd + Enter) to fetch content
+            document.addEventListener('keydown', function(e) {
+                if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                    if (onlyfansLink.value.trim()) {
+                        fetchButton.click();
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>
