@@ -498,3 +498,195 @@
                 
                 if (items.length === 0) {
                     downloadList.innerHTML = '<p>No media found.</p>';
+return;
+                }
+                
+                const listContainer = document.createElement('div');
+                
+                items.forEach(item => {
+                    const itemDiv = document.createElement('div');
+                    itemDiv.className = 'download-item';
+                    
+                    const rowDiv = document.createElement('div');
+                    rowDiv.className = 'row align-items-center';
+                    
+                    const col1 = document.createElement('div');
+                    col1.className = 'col-md-3';
+                    
+                    const mediaContainer = document.createElement('div');
+                    mediaContainer.className = 'media-container';
+                    
+                    const img = document.createElement('img');
+                    img.src = item.thumbnail;
+                    img.className = 'img-fluid rounded thumbnail';
+                    img.alt = item.type;
+                    
+                    const badge = document.createElement('span');
+                    badge.className = `media-type-badge ${item.type === 'video' ? 'video-badge' : 'image-badge'}`;
+                    badge.textContent = item.type.toUpperCase();
+                    
+                    mediaContainer.appendChild(img);
+                    mediaContainer.appendChild(badge);
+                    col1.appendChild(mediaContainer);
+                    
+                    const col2 = document.createElement('div');
+                    col2.className = 'col-md-6';
+                    const postInfo = item.postTitle ? `<small class="text-muted d-block">From: ${item.postTitle}</small>` : '';
+                    col2.innerHTML = `
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" value="${item.id}" id="check_${item.id}" checked>
+                            <label class="form-check-label" for="check_${item.id}">
+                                <strong>${item.name}</strong><br>
+                                <small class="text-muted">${item.size}</small>
+                                ${postInfo}
+                            </label>
+                        </div>
+                    `;
+                    
+                    const col3 = document.createElement('div');
+                    col3.className = 'col-md-3 text-end';
+                    
+                    const downloadBtn = document.createElement('button');
+                    downloadBtn.className = 'btn btn-sm btn-outline-primary download-btn';
+                    downloadBtn.textContent = 'Download';
+                    downloadBtn.dataset.url = item.url;
+                    downloadBtn.dataset.name = item.name;
+                    col3.appendChild(downloadBtn);
+                    
+                    rowDiv.appendChild(col1);
+                    rowDiv.appendChild(col2);
+                    rowDiv.appendChild(col3);
+                    itemDiv.appendChild(rowDiv);
+                    listContainer.appendChild(itemDiv);
+                });
+                
+                const actionsDiv = document.createElement('div');
+                actionsDiv.className = 'mt-3 d-flex justify-content-between';
+                actionsDiv.innerHTML = `
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="selectAll" checked>
+                        <label class="form-check-label" for="selectAll">
+                            Select All
+                        </label>
+                    </div>
+                    <button id="downloadAll" class="btn btn-success">Download Selected</button>
+                `;
+                listContainer.appendChild(actionsDiv);
+                
+                downloadList.appendChild(listContainer);
+                
+                // Add event listeners for download buttons
+                document.querySelectorAll('.download-btn').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        downloadFile(this.dataset.url, this.dataset.name);
+                    });
+                });
+                
+                // Select all functionality
+                const selectAllCheckbox = document.getElementById('selectAll');
+                selectAllCheckbox.addEventListener('change', function() {
+                    const isChecked = this.checked;
+                    document.querySelectorAll('.form-check-input[type="checkbox"]').forEach(checkbox => {
+                        if (checkbox.id !== 'selectAll') {
+                            checkbox.checked = isChecked;
+                        }
+                    });
+                });
+                
+                document.getElementById('downloadAll').addEventListener('click', function() {
+                    const selectedItems = [];
+                    document.querySelectorAll('.form-check-input:checked').forEach(checkbox => {
+                        if (checkbox.id !== 'selectAll') {
+                            const id = checkbox.value;
+                            const item = items.find(i => i.id === id);
+                            if (item) {
+                                selectedItems.push(item);
+                            }
+                        }
+                    });
+                    
+                    if (selectedItems.length === 0) {
+                        showStatus('Please select at least one item to download', 'warning');
+                        return;
+                    }
+                    
+                    showStatus(`Preparing to download ${selectedItems.length} item(s)...`, 'info');
+                    progressContainer.style.display = 'block';
+                    
+                    // Simulate batch download
+                    let completed = 0;
+                    selectedItems.forEach((item, index) => {
+                        setTimeout(() => {
+                            downloadFile(item.url, item.name);
+                            completed++;
+                            updateProgress(Math.floor((completed / selectedItems.length) * 100));
+                            
+                            if (completed === selectedItems.length) {
+                                showStatus(`Successfully downloaded ${selectedItems.length} item(s)`, 'success');
+                                setTimeout(() => {
+                                    progressContainer.style.display = 'none';
+                                }, 1000);
+                            }
+                        }, index * 500); // Stagger downloads
+                    });
+                });
+            }
+            
+            function downloadFile(url, filename) {
+                // Create a temporary link element to trigger download
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = filename;
+                link.style.display = 'none';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
+            
+            function showStatus(message, type) {
+                statusMessage.innerHTML = `<div class="alert alert-${type}">${message}</div>`;
+                statusMessage.style.display = 'block';
+                
+                // Auto hide after 5 seconds for success messages
+                if (type === 'success') {
+                    setTimeout(() => {
+                        statusMessage.style.display = 'none';
+                    }, 5000);
+                }
+            }
+            
+            function updateProgress(percent) {
+                progressBar.style.width = `${percent}%`;
+                progressBar.setAttribute('aria-valuenow', percent);
+                progressBar.textContent = `${percent}%`;
+            }
+            
+            // Simulate URL parsing from clipboard
+            onlyfansLink.addEventListener('paste', function(e) {
+                setTimeout(() => {
+                    const pastedText = this.value.trim();
+                    if (pastedText.includes('onlyfans.com')) {
+                        showStatus('OnlyFans URL detected. Click "Fetch Content" to continue.', 'info');
+                    }
+                }, 100);
+            });
+            
+            // Add keyboard shortcut (Ctrl/Cmd + Enter) to fetch content
+            document.addEventListener('keydown', function(e) {
+                if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                    if (onlyfansLink.value.trim()) {
+                        fetchButton.click();
+                    }
+                }
+            });
+            
+            // Tab switching event to update media list
+            document.getElementById('media-tab').addEventListener('shown.bs.tab', function() {
+                if (allMediaItems.length > 0) {
+                    displayMediaItems(allMediaItems);
+                }
+            });
+        });
+    </script>
+</body>
+</html>
