@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OnlyFans Content Downloader</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #1a1a1a;
+            color: #fff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .container {
+            max-width: 800px;
+            margin-top: 50px;
+        }
+        .card {
+            background-color: #2a2a2a;
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+        .card-header {
+            background-color: #3a3a3a;
+            border-bottom: 1px solid #444;
+            border-radius: 15px 15px 0 0 !important;
+            font-weight: 600;
+        }
+        .btn-primary {
+            background-color: #00aeff;
+            border: none;
+        }
+        .btn-primary:hover {
+            background-color: #0099dd;
+        }
+        .form-control {
+            background-color: #333;
+            border: 1px solid #444;
+            color: #fff;
+        }
+        .form-control:focus {
+            background-color: #333;
+            border: 1px solid #00aeff;
+            color: #fff;
+            box-shadow: 0 0 0 0.25rem rgba(0, 174, 255, 0.25);
+        }
+        .progress {
+            height: 10px;
+            background-color: #444;
+        }
+        .progress-bar {
+            background-color: #00aeff;
+        }
+        .download-item {
+            border-bottom: 1px solid #444;
+            padding: 10px 0;
+        }
+        .download-item:last-child {
+            border-bottom: none;
+        }
+        .status-message {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 8px;
+        }
+        .alert {
+            background-color: #3a3a3a;
+            border: 1px solid #444;
+            color: #fff;
+        }
+        .thumbnail {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+        }
+        .media-type-badge {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: bold;
+        }
+        .video-badge {
+            background-color: #ff4757;
+        }
+        .image-badge {
+            background-color: #00aeff;
+        }
+        .media-container {
+            position: relative;
+            margin-bottom: 10px;
+        }
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #00aeff;
+            animation: spin 1s ease-in-out infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .profile-info {
+            background-color: #333;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+        }
+        .profile-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            margin-right: 15px;
+            object-fit: cover;
+        }
+        .profile-details h4 {
+            margin: 0;
+            font-weight: 600;
+        }
+        .profile-details p {
+            margin: 5px 0 0;
+            color: #aaa;
+            font-size: 0.9rem;
+        }
+        .tabs-container {
+            margin-top: 20px;
+        }
+        .nav-tabs .nav-link {
+            color: #aaa;
+            border: none;
+            border-bottom: 2px solid transparent;
+        }
+        .nav-tabs .nav-link.active {
+            color: #fff;
+            background: none;
+            border-bottom: 2px solid #00aeff;
+        }
+        .tab-content {
+            margin-top: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <div class="card-header text-center">
+                <h3>OnlyFans Content Downloader</h3>
+            </div>
+            <div class="card-body">
+                <div class="mb-4">
+                    <label for="onlyfansLink" class="form-label">OnlyFans URL</label>
+                    <input type="text" class="form-control" id="onlyfansLink" placeholder="https://onlyfans.com/username or https://onlyfans.com/username/post/1234567890">
+                </div>
+                
+                <div class="d-grid">
+                    <button id="fetchContent" class="btn btn-primary">Fetch Content</button>
+                </div>
+                
+                <div id="statusMessage" class="status-message" style="display: none;"></div>
+                
+                <div class="mt-4">
+                    <div id="progressContainer" style="display: none;">
+                        <label class="form-label">Download Progress</label>
+                        <div class="progress">
+                            <div id="progressBar" class="progress-bar" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">0%</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="profileInfo" style="display: none;"></div>
+                
+                <div id="tabsContainer" class="tabs-container" style="display: none;">
+                    <ul class="nav nav-tabs" id="contentTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="posts-tab" data-bs-toggle="tab" data-bs-target="#posts" type="button" role="tab">Posts</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="media-tab" data-bs-toggle="tab" data-bs-target="#media" type="button" role="tab">Media</button>
+                        </li>
+                    </ul>
+                    <div class="tab-content" id="tabContent">
+                        <div class="tab-pane fade show active" id="posts" role="tabpanel">
+                            <div id="postsList"></div>
+                        </div>
+                        <div class="tab-pane fade" id="media" role="tabpanel">
+                            <div id="downloadList"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="mt-4 card">
+            <div class="card-header">
+                <h5>Instructions</h5>
+            </div>
+            <div class="card-body">
+                <ol>
+                    <li>Copy an OnlyFans profile URL or specific post URL</li>
+                    <li>Paste it in the input field above</li>
+                    <li>Click "Fetch Content" to analyze the profile or post</li>
+                    <li>For profiles: Browse posts in the Posts tab</li>
+                    <li>Select the media files you want to download in the Media tab</li>
+                    <li>Click "Download" to save them to your device</li>
+                </ol>
+                <div class="alert alert-warning mt-3">
+                    <strong>Note:</strong> This tool is for educational purposes only. Respect content creators' rights and terms of service.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const fetchButton = document.getElementById('fetchContent');
+            const onlyfansLink = document.getElementById('onlyfansLink');
+            const statusMessage = document.getElementById('statusMessage');
+            const downloadList = document.getElementById('downloadList');
+            const postsList = document.getElementById('postsList');
+            const progressContainer = document.getElementById('progressContainer');
+            const progressBar = document.getElementById('progressBar');
+            const profileInfo = document.getElementById('profileInfo');
+            const tabsContainer = document.getElementById('tabsContainer');
+            
+            let currentProfile = null;
+            let currentPosts = [];
+            let allMediaItems = [];
+            
+            fetchButton.addEventListener('click', function() {
+                const url = onlyfansLink.value.trim();
+                
+                if (!url) {
+                    showStatus('Please enter a valid OnlyFans URL', 'danger');
+                    return;
+                }
+                
+                if (!url.includes('onlyfans.com/')) {
+                    showStatus('Please enter a valid OnlyFans URL', 'danger');
+                    return;
+                }
+                
+                showStatus('Fetching content...', 'info');
+                progressContainer.style.display = 'block';
+                updateProgress(10);
+                
+                // Simulate fetching content
+                setTimeout(() => {
+                    // Check if this is a post URL or profile URL
+                    const isPostUrl = url.includes('/post/');
+                    
+                    if (isPostUrl) {
+                        // Handle post URL
+                        const postId = extractPostId(url);
+                        
+                        if (!postId) {
+                            showStatus('Could not extract post ID from the URL', 'danger');
+                            progressContainer.style.display = 'none';
+                            return;
+                        }
+                        
+                        updateProgress(30);
+                        
+                        // Simulate API call to get media from post
+                        setTimeout(() => {
+                            const mediaItems = generateMockMedia(postId);
+                            allMediaItems = mediaItems;
+                            displayMediaItems(mediaItems);
+                            updateProgress(100);
+                            showStatus(`Found \${mediaItems.length} media items in the post. Select items to download.`, 'success');
+                            
+                            setTimeout(() => {
+                                progressContainer.style.display = 'none';
+                            }, 1000);
+                        }, 1000);
+                    } else {
+                        // Handle profile URL
+                        const profileData = extractProfileData(url);
+                        
+                        if (!profileData) {
+                            showStatus('Could not extract profile information from the URL', 'danger');
+                            progressContainer.style.display = 'none';
+                            return;
+                        }
+                        
+                        updateProgress(20);
+                        
+                        // Simulate API call to get profile info
+                        setTimeout(() => {
+                            currentProfile = generateMockProfile(profileData);
+                            displayProfileInfo(currentProfile);
+                            updateProgress(50);
+                            
+                            // Simulate API call to get posts
+                            setTimeout(() => {
+                                currentPosts = generateMockPosts(currentProfile);
+                                displayPosts(currentPosts);
+                                
+                                // Extract all media from posts
+                                allMediaItems = [];
+                                currentPosts.forEach(post => {
+                                    post.media.forEach(item => {
+                                        allMediaItems.push({
+                                            ...item,
+                                            postId: post.id,
+                                            postTitle: post.title
+                                        });
+                                    });
+                                });
+                                
+                                updateProgress(100);
+                                showStatus(`Found ${currentPosts.length} posts with ${allMediaItems.length} media items.`, 'success');
+                                
+                                setTimeout(() => {
+                                    progressContainer.style.display = 'none';
+                                }, 1000);
+                            }, 1000);
+                        }, 500);
+                    }
+                }, 500);
+            });
+            
+            function extractPostId(url) {
+                // Try multiple patterns for OnlyFans post URLs
+                const patterns = [
+                    /\/post\/(\d+)/,                    // Standard post URL
+                    /onlyfans\.com\/.*?\/(\d+)/,        // Alternative format with username/postID
+                    /onlyfans\.com\/.*\/(\d+)(?:\/|$)/, // More flexible pattern
+                    /\/(\d+)(?:\/|$)/                   // Last resort: any number after domain
+                ];
+                
+                for (const pattern of patterns) {
+                    const match = url.match(pattern);
+                    if (match && match[1]) {
+                        return match[1];
+                    }
+                }
+                
+                return null;
+            }
+            
+            function extractProfileData(url) {
+                // Extract user ID and username from profile URL
+                const idMatch = url.match(/onlyfans\.com\/(\d+)/);
+                const usernameMatch = url.match(/onlyfans\.com\/\d+\/([^\/\?]+)/);
+                
+                if (idMatch && usernameMatch) {
+                    return {
+                        id: idMatch[1],
+                        username: usernameMatch[1]
+                    };
+                }
+                
+                return null;
+            }
+            
+            function generateMockProfile(profileData) {
+                return {
+                    id: profileData.id,
+                    username: profileData.username,
+                    displayName: profileData.username.charAt(0).toUpperCase() + profileData.username.slice(1).replace('.', ' '),
+                    avatar: `https://picsum.photos/seed/${profileData.username}/200/200.jpg`,
+                    bio: "Content creator sharing exclusive content with subscribers.",
+                    subscribers: Math.floor(Math.random() * 10000) + 1000,
+                    postsCount: Math.floor(Math.random() * 200) + 50
+                };
+            }
+            
+            function generateMockPosts(profile) {
+                const postsCount = Math.min(profile.postsCount, 20); // Limit to 20 posts for demo
+                const posts = [];
+                
+                for (let i = 0; i < postsCount; i++) {
+                    const mediaCount = Math.floor(Math.random() * 5) + 1;
+                    const mediaItems = [];
+                    
+                    for (let j = 0; j < mediaCount; j++) {
+                        const isVideo = Math.random() > 0.5;
+                        mediaItems.push({
+                            id: `${profile.id}_${i}_${j}`,
+                            type: isVideo ? 'video' : 'image',
+                            url: `https://example.com/onlyfans/${profile.id}_${i}_${isVideo ? 'video' : 'image'}_${j}.\${isVideo ? 'mp4' : 'jpg'}`,
+                            thumbnail: `https://picsum.photos/seed/${profile.id}${i}${j}/300/200.jpg`,
+                            size: isVideo ? `${Math.floor(Math.random() * 50 + 10)}MB` : `\${Math.floor(Math.random() * 5 + 1)}MB`,
+                            name: `${profile.username}_${i}_${isVideo ? 'video' : 'photo'}_${j}.\${isVideo ? 'mp4' : 'jpg'}`
+                        });
+                    }
+                    
+                    posts.push({
+                        id: `${profile.id}_${i}`,
+                        title: `Post #\${i + 1}`,
+                        date: new Date(Date.now() - i * 86400000).toLocaleDateString(),
+                        preview: mediaItems[0].thumbnail,
+                        media: mediaItems,
+                        likes: Math.floor(Math.random() * 1000) + 100,
+                        comments: Math.floor(Math.random() * 100) + 10
+                    });
+                }
+                
+                return posts;
+            }
+            
+            function displayProfileInfo(profile) {
+                profileInfo.innerHTML = `
+                    <div class="profile-info">
+                        <img src="${profile.avatar}" alt="${profile.username}" class="profile-avatar">
+                        <div class="profile-details">
+                            <h4>\${profile.displayName}</h4>
+                            <p>@${profile.username} · ${profile.subscribers.toLocaleString()} subscribers</p>
+                        </div>
+                    </div>
+                `;
+                profileInfo.style.display = 'block';
+                tabsContainer.style.display = 'block';
+            }
+            
+            function displayPosts(posts) {
+                postsList.innerHTML = '';
+                
+                if (posts.length === 0) {
+                    postsList.innerHTML = '<p>No posts found.</p>';
+                    return;
+                }
+                
+                const postsContainer = document.createElement('div');
+                
+                posts.forEach(post => {
+                    const postDiv = document.createElement('div');
+                    postDiv.className = 'download-item';
+                    postDiv.innerHTML = `
+                        <div class="row align-items-center">
+                            <div class="col-md-3">
+                                <img src="\${post.preview}" class="img-fluid rounded thumbnail" alt="Post preview">
+                            </div>
+                            <div class="col-md-6">
+                                <h5>\${post.title}</h5>
+                                <p class="text-muted">${post.date} · ${post.media.length} media items</p>
+                                <p class="text-muted">❤️ ${post.likes} · 💬 ${post.comments}</p>
+                            </div>
+                            <div class="col-md-3 text-end">
+                                <button class="btn btn-sm btn-outline-primary view-post-btn" data-post-id="\${post.id}">View</button>
+                            </div>
+                        </div>
+                    `;
+                    postsContainer.appendChild(postDiv);
+                });
+                
+                postsList.appendChild(postsContainer);
+                
+                // Add event listeners for view post buttons
+                document.querySelectorAll('.view-post-btn').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const postId = this.dataset.postId;
+                        const post = posts.find(p => p.id === postId);
+                        if (post) {
+                            // Switch to media tab and filter by this post
+                            const mediaTab = document.getElementById('media-tab');
+                            const tab = new bootstrap.Tab(mediaTab);
+                            tab.show();
+                            
+                            // Filter media items for this post
+                            const postMedia = allMediaItems.filter(item => item.postId === postId);
+                            displayMediaItems(postMedia);
+                        }
+                    });
+                });
+            }
+            
+            function generateMockMedia(postId) {
+                // Generate mock media items based on post ID
+                const numItems = Math.floor(Math.random() * 5) + 1;
+                const mediaItems = [];
+                
+                for (let i = 0; i < numItems; i++) {
+                    const isVideo = Math.random() > 0.5;
+                    mediaItems.push({
+                        id: `${postId}_${i}`,
+                        type: isVideo ? 'video' : 'image',
+                        url: `https://example.com/onlyfans/${postId}_${isVideo ? 'video' : 'image'}_${i}.${isVideo ? 'mp4' : 'jpg'}`,
+                        thumbnail: `https://picsum.photos/seed/${postId}${i}/300/200.jpg`,
+                        size: isVideo ? `\${Math.floor(Math.random() * 50 + 10)}MB` : `\${Math.floor(Math.random() * 5 + 1)}MB`,
+                        name: `onlyfans_${postId}_${isVideo ? 'video' : 'photo'}_${i}.${isVideo ? 'mp4' : 'jpg'}`
+                    });
+                }
+                
+                return mediaItems;
+            }
+            
+            function displayMediaItems(items) {
+                downloadList.innerHTML = '';
+                
+                if (items.length === 0) {
+                    downloadList.innerHTML = '<p>No media found.</p>';
